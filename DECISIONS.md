@@ -2,6 +2,17 @@
 
 Future agents should append decisions to this log rather than silently rewriting historical decisions. Product-level changes should be proposed here and approved before the PRD is changed.
 
+## 2026-08-11 - Milestone 1 Accepted
+
+Decision:
+Mark Milestone 1 - Universal Habits and Routines as complete.
+
+Rationale:
+Sola approved the Milestone 1 review after accepting the database verification, implementation validation, scope discipline, and test results.
+
+Consequences:
+Do not begin Milestone 2 until Sola explicitly approves it. The next project activity is manual UX review of the completed Milestone 1 habit/routine experience.
+
 ## 2026-08-10 - External AI-Assisted Meal Logging for V1
 
 Decision:

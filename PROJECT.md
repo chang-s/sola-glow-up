@@ -5,10 +5,10 @@ Sola Glow-Up is a private, single-user personal growth and wellness tracker for 
 ## Current Status
 
 **Current Phase:** Milestone 1 - Universal Habits and Routines
-**Current Status:** READY FOR REVIEW
+**Current Status:** COMPLETE
 **Active Autonomy Level:** Level 2 - Trusted Development
-**Current Priority:** Review the completed Milestone 1 habit/routine implementation.
-**Next Approved Task:** Awaiting Sola review of Milestone 1; do not begin Milestone 2.
+**Current Priority:** Manual UX review of the accepted Milestone 1 habit/routine experience.
+**Next Approved Task:** Await Sola's manual Milestone 1 UX feedback; do not begin Milestone 2.
 
 ## Product Principles
 
@@ -74,6 +74,7 @@ Do not begin Milestone 2 until Sola explicitly approves it.
 
 ## Milestone 1 Completion Notes
 
+- Milestone 1 has been reviewed and accepted by Sola.
 - Universal habit, schedule, habit-entry, routine-group, routine-step, and unlinked routine-step-entry tables exist remotely.
 - Remote Supabase migration history records `0003_habits_and_routines.sql` as applied.
 - Habit and routine tables use owner-only RLS with authenticated `SELECT`, `INSERT`, and `UPDATE` only; `DELETE` is not granted.
