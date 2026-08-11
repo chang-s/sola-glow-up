@@ -14,6 +14,7 @@ Milestone 0 uses the real Supabase architecture.
 - The first migration, `0001_app_foundation.sql`, was applied manually before Supabase CLI migration history was configured.
 - Supabase migration history has been repaired so `0001` is recorded as applied.
 - `0002_profiles_api_grants.sql` has been applied through `pnpm supabase db push --linked`.
+- `0003_habits_and_routines.sql` has been applied through `pnpm supabase db push --linked`.
 - `pnpm supabase db push --linked --dry-run` reports the remote database is up to date.
 
 ## Required Project Settings

@@ -2,6 +2,28 @@
 
 Future agents should append decisions to this log rather than silently rewriting historical decisions. Product-level changes should be proposed here and approved before the PRD is changed.
 
+## 2026-08-10 - External AI-Assisted Meal Logging for V1
+
+Decision:
+Do not build an in-app AI food analysis integration for V1. V1 may use an external ChatGPT/ChatGPT Work workflow to help estimate and structure meal details, but the Sola Glow-Up app itself must not require an AI runtime, AI API key, AI backend, or AI API expense for food logging.
+
+Rationale:
+External AI assistance can make meal logging easier without adding V1 infrastructure cost, secrets, backend complexity, or a separate AI-specific product architecture.
+
+Consequences:
+External or agent-assisted meal details must become normal canonical `food_entries` records, the same as manual entries. AI-estimated nutrition must remain editable and identifiable as estimated. The proposed future `food_entries` schema may preserve lightweight provenance such as `source` and `nutrition_estimate`, but must not add separate AI tables, prompts, model names, raw responses, token usage, confidence scores, or duplicate calorie/macro sources of truth. In-app AI-assisted food photo/description analysis remains V1.5 unless explicitly approved later.
+
+## 2026-08-10 - Frontend Hosting Cost Preference
+
+Decision:
+Frontend/PWA hosting is not yet finalized. Evaluate GitHub Pages as the preferred free option before introducing a paid or extra frontend hosting service. Vercel remains an alternative if technical requirements make GitHub Pages unsuitable.
+
+Rationale:
+Recurring infrastructure cost should stay as close to $0 as reasonably possible.
+
+Consequences:
+Do not silently change deployment configuration or deploy. Future deployment planning should compare GitHub Pages against Vercel before choosing a production frontend host.
+
 ## 2026-08-10 - V1 Authentication
 
 Decision:
@@ -69,6 +91,9 @@ Consequences:
 Avatar implementation should make it straightforward to replace placeholder states with purchased, licensed, or custom sprite assets later. Do not generate an elaborate temporary art system.
 
 ## 2026-08-10 - Vercel Frontend Deployment Target
+
+Status:
+Superseded by the later 2026-08-10 frontend hosting cost preference decision. Vercel remains an alternative, but frontend/PWA hosting is no longer finalized.
 
 Decision:
 Use Vercel as the planned frontend/PWA deployment target and Supabase for backend/database/auth/storage.

@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { AuthRoute } from "../features/auth/AuthRoute";
 import { LoginPage } from "../features/auth/LoginPage";
+import { SettingsPage } from "../features/habits/SettingsPage";
+import { TodayPage } from "../features/habits/TodayPage";
 import { routeSections } from "./routeConfig";
 import { PlaceholderPage } from "./routes";
 
@@ -16,7 +18,15 @@ export function App() {
 						<Route
 							key={section.path}
 							path={section.path}
-							element={<PlaceholderPage section={section} />}
+							element={
+								section.path === "today" ? (
+									<TodayPage />
+								) : section.path === "settings" ? (
+									<SettingsPage />
+								) : (
+									<PlaceholderPage section={section} />
+								)
+							}
 						/>
 					))}
 				</Route>

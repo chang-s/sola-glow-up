@@ -8,7 +8,7 @@ This document describes the approved architecture and Milestone 0 foundation. It
 
 - Frontend: React, TypeScript, Vite
 - App model: responsive Progressive Web App
-- Deployment target: Vercel
+- Deployment target: not finalized. Evaluate GitHub Pages as the preferred free frontend/PWA hosting option before introducing a paid or extra hosting service; Vercel remains an alternative if GitHub Pages is unsuitable for technical requirements.
 - Backend: Supabase
 - Database: Supabase Postgres
 - Authentication: Supabase Auth with email/password for V1
@@ -202,7 +202,8 @@ Today, Calendar, weekly reports, sleep analytics, and historical editing should 
 ## Architectural Boundaries
 
 - V1.5/Future features must not be implemented without approval.
-- AI food analysis is not a V1 dependency.
+- In-app AI food analysis is not a V1 dependency.
+- External ChatGPT/ChatGPT Work workflows may assist with preparing or entering structured data, but agent-assisted entries must use canonical application data models and do not imply an AI runtime, AI API key, AI backend, or AI API expense in the Sola Glow-Up application.
 - Automatic health import is not a V1 dependency.
 - Money/expense tracking is a separate future module requiring separate planning.
 - Pixel Sola V1 should be a lightweight state/reaction system with replaceable placeholder assets, not a game simulation.

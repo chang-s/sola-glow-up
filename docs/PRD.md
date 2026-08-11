@@ -161,7 +161,22 @@ Habit, It was there, Other.
 
 Provide a chronological photo gallery with log details.
 
-AI food-photo analysis is V1.5, not a V1 dependency.
+Manual food entry is a permanent supported workflow. V1 does not depend
+on in-app AI food-photo analysis, an AI runtime, an AI API key, an AI
+backend, or AI API expense.
+
+V1 may support an external AI-assisted workflow: Sola can take or upload
+a meal photo, have ChatGPT/ChatGPT Work outside the app estimate and
+structure details such as meal description, portion notes, calories,
+protein, carbs, fat, and other useful food-entry details, then manually
+enter or paste that information into Glow-Up. A later authorized Work
+workflow may also add the structured entry if explicitly approved.
+
+External AI assistance does not create a separate food record type. The
+resulting entry uses the same canonical `food_entries` model as a fully
+manual entry. AI-estimated nutrition values must remain editable and
+should be identified as estimates rather than measured or authoritative
+values.
 
 ### 5.6 Fitness
 
@@ -320,7 +335,7 @@ model can represent a concept cleanly.
 
 ## 9. V1.5
 
--   AI-assisted food photo/description analysis with editable
+-   In-app AI-assisted food photo/description analysis with editable
     calorie/macro estimates
 -   Progress-photo comparison
 -   Deeper correlations and natural-language insights
@@ -354,11 +369,11 @@ planning.
 
 ## 11. Explicit V1 Non-Goals
 
-Do not delay V1 for: - AI food analysis - Automatic health import -
-Expense tracking - Full RPG mechanics - Coins/XP/levels - Cosmetic
-unlocks - Pixel pet - Complex room simulation - Multi-user/social
-features - Public profiles - Commercial billing - Notification quick
-logging - Third-party calendar sync
+Do not delay V1 for: - In-app AI food analysis - Automatic health
+import - Expense tracking - Full RPG mechanics - Coins/XP/levels -
+Cosmetic unlocks - Pixel pet - Complex room simulation -
+Multi-user/social features - Public profiles - Commercial billing -
+Notification quick logging - Third-party calendar sync
 
 ## 12. Recommended Delivery Phases
 

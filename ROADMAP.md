@@ -10,10 +10,10 @@
 
 ## Current Roadmap State
 
-**Current Phase:** Milestone 1 - Universal Habits and Routines  
-**Current Status:** IN PROGRESS  
-**Active Autonomy Level:** Level 2 - Trusted Development  
-**Next Approved Task:** Review `0003_habits_and_routines.sql`; do not apply remote migrations until Sola approves.
+**Current Phase:** Milestone 1 - Universal Habits and Routines
+**Current Status:** READY FOR REVIEW
+**Active Autonomy Level:** Level 2 - Trusted Development
+**Next Approved Task:** Awaiting Sola review of Milestone 1; do not begin Milestone 2.
 
 Agents should never guess what to work on when `Next Approved Task` exists.
 
@@ -71,19 +71,19 @@ Explicit Non-Scope:
 
 ## Milestone 1 - Universal Habits and Routines
 
-**Status:** IN PROGRESS
+**Status:** READY FOR REVIEW
 
 Objective:
 Build configurable daily behavior tracking.
 
 Tasks:
 
-- Habit definitions.
-- Habit schedules, including deterministic `every_x_days` anchors and `times_per_month`.
-- Habit entries/completions.
-- Routine groups and steps.
-- Check All behavior.
-- Create/edit/reorder/deactivate habits.
+- [x] Habit definitions.
+- [x] Habit schedules, including deterministic `every_x_days` anchors and `times_per_month`.
+- [x] Habit entries/completions.
+- [x] Routine groups and steps.
+- [x] Check All behavior.
+- [x] Create/edit/reorder/deactivate habits.
 
 Dependencies:
 
@@ -98,9 +98,9 @@ Acceptance Criteria:
 
 Required Validation:
 
-- Schedule expansion tests, including anchored every-X-days and X-times/month behavior.
-- Completion tests.
-- Basic accessibility and responsive checks.
+- [x] Schedule expansion tests, including anchored every-X-days and X-times/month behavior.
+- [x] Completion tests.
+- [x] Basic accessibility and responsive checks.
 
 Explicit Non-Scope:
 
@@ -256,6 +256,8 @@ Acceptance Criteria:
 - Food can be logged quickly on Android mobile.
 - Photos are stored privately.
 - Manual nutrition remains optional.
+- Externally AI-assisted food details, if manually entered or entered by an approved Work workflow, become normal editable `food_entries` records.
+- Estimated nutrition values are editable and identifiable as estimates.
 - Gallery shows photos with log details.
 
 Required Validation:
@@ -266,7 +268,7 @@ Required Validation:
 
 Explicit Non-Scope:
 
-- AI food-photo analysis.
+- In-app AI food-photo analysis.
 - Automatic calorie/macro estimates.
 
 ## Milestone 6 - Beauty and Progress Photos

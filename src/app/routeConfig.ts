@@ -22,7 +22,7 @@ export const routeSections: RouteSection[] = [
 	{
 		path: "today",
 		label: "Today",
-		description: "Daily command center placeholder for Milestone 0.",
+		description: "Daily habit and routine completion.",
 		Icon: Home
 	},
 	{
@@ -70,7 +70,7 @@ export const routeSections: RouteSection[] = [
 	{
 		path: "settings",
 		label: "Settings",
-		description: "Configuration and export foundation route.",
+		description: "Habit and routine configuration.",
 		Icon: Settings
 	}
 ];

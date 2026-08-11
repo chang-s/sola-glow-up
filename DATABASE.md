@@ -10,7 +10,8 @@ Current migration state:
 - Remote migration history records `0001_app_foundation.sql` and `0002_profiles_api_grants.sql` as applied.
 - `0001_app_foundation.sql` creates only the `profiles` foundation table, timestamp trigger, and owner-only RLS policies.
 - `0002_profiles_api_grants.sql` grants API table privileges for authenticated profile access while leaving row-level access to the owner-only RLS policies.
-- Milestone 1 local migration work adds universal habit and routine tables in `supabase/migrations/0003_habits_and_routines.sql`.
+- Remote migration history records `0003_habits_and_routines.sql` as applied.
+- Milestone 1 adds universal habit and routine tables in `supabase/migrations/0003_habits_and_routines.sql`.
 - Goals/sprints remain deferred because the Goals model is provisional until Milestone 3 refinement.
 
 ## Design Principles
@@ -268,6 +269,7 @@ The Goals schema is provisional. `metric_type` and `target_value` may not be exp
 - `id` primary key
 - `user_id` references `profiles.id`
 - `eaten_at`
+- `source`
 - `description`
 - `portion_notes`
 - `eating_reason`
@@ -280,10 +282,20 @@ The Goals schema is provisional. `metric_type` and `target_value` may not be exp
 - `protein`
 - `carbs`
 - `fat`
+- `nutrition_estimate`
 - `notes`
 - `created_at`
 - `updated_at`
 - `deleted_at`
+
+`source` preserves lightweight entry provenance without creating
+AI-specific architecture. Intended values are `manual`, `external_ai`,
+and potentially `in_app_ai` if a future approved milestone adds in-app
+AI analysis. `nutrition_estimate` indicates that calorie and macro
+values are estimates rather than measured or label-derived values. These
+fields do not create duplicate sources of truth: calories and macros
+remain stored on `food_entries`, and food photos remain attached through
+`food_photos`.
 
 `food_photos`
 
@@ -374,6 +386,7 @@ Weekly and monthly reports should persist as snapshots. Regeneration should be a
 - `goal_status`: active, paused, complete, archived
 - `sprint_status`: planned, active, complete, archived
 - `eating_reason`: hungry, craving, bored, emotional, social, habit, it_was_there, other
+- `food_entry_source`: manual, external_ai, in_app_ai
 - `photo_label`: front, side, back, custom
 - `report_type`: weekly, monthly
 

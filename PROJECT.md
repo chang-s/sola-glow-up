@@ -4,11 +4,11 @@ Sola Glow-Up is a private, single-user personal growth and wellness tracker for 
 
 ## Current Status
 
-**Current Phase:** Milestone 1 - Universal Habits and Routines  
-**Current Status:** IN PROGRESS  
-**Active Autonomy Level:** Level 2 - Trusted Development  
-**Current Priority:** Prepare the local non-destructive Milestone 1 habit/routine migration for review.  
-**Next Approved Task:** Review `0003_habits_and_routines.sql`; do not apply remote migrations until Sola approves.
+**Current Phase:** Milestone 1 - Universal Habits and Routines
+**Current Status:** READY FOR REVIEW
+**Active Autonomy Level:** Level 2 - Trusted Development
+**Current Priority:** Review the completed Milestone 1 habit/routine implementation.
+**Next Approved Task:** Awaiting Sola review of Milestone 1; do not begin Milestone 2.
 
 ## Product Principles
 
@@ -43,7 +43,13 @@ Material contradictions between these documents are a STOP condition. Do not sil
 - TanStack Query for server state
 - Lightweight local UI state where necessary
 - Zod or comparable validation at app boundaries
-- Vercel for planned frontend/PWA deployment
+- Frontend/PWA hosting not yet finalized. Evaluate GitHub Pages as the preferred free option before introducing a paid or extra hosting service; Vercel remains an alternative if technical requirements make GitHub Pages unsuitable.
+
+## Architecture/Product Notes
+
+- External ChatGPT/ChatGPT Work workflows may assist with preparing or entering structured data.
+- Agent-assisted entries must use the same canonical application data models as manual entries.
+- External AI assistance does not imply an AI runtime dependency in the Sola Glow-Up application.
 
 ## Commands
 
@@ -65,6 +71,16 @@ Do not begin Milestone 2 until Sola explicitly approves it.
 - Remote Supabase migration history records `0001_app_foundation.sql` and `0002_profiles_api_grants.sql` as applied.
 - `public.profiles` has owner-only RLS policies and authenticated API privileges for `SELECT`, `INSERT`, and `UPDATE`; `DELETE` is not granted.
 - Anonymous profile access remains blocked.
+
+## Milestone 1 Completion Notes
+
+- Universal habit, schedule, habit-entry, routine-group, routine-step, and unlinked routine-step-entry tables exist remotely.
+- Remote Supabase migration history records `0003_habits_and_routines.sql` as applied.
+- Habit and routine tables use owner-only RLS with authenticated `SELECT`, `INSERT`, and `UPDATE` only; `DELETE` is not granted.
+- V1 habit entries are one aggregate active entry per habit per calendar date.
+- Linked routine steps use `habit_entries`; unlinked routine steps use `routine_step_entries`.
+- Today supports scheduled habit completion, value entry for numeric/duration/quantity habits, routine step completion, and Check All.
+- Settings supports creating, editing, reordering, and archiving habits, routine groups, and routine steps.
 
 ## Known Technical Debt
 
