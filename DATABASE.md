@@ -10,7 +10,7 @@ Current migration state:
 - Remote migration history records `0001_app_foundation.sql` and `0002_profiles_api_grants.sql` as applied.
 - `0001_app_foundation.sql` creates only the `profiles` foundation table, timestamp trigger, and owner-only RLS policies.
 - `0002_profiles_api_grants.sql` grants API table privileges for authenticated profile access while leaving row-level access to the owner-only RLS policies.
-- Domain tables are deferred to later milestone migrations.
+- Milestone 1 local migration work adds universal habit and routine tables in `supabase/migrations/0003_habits_and_routines.sql`.
 - Goals/sprints remain deferred because the Goals model is provisional until Milestone 3 refinement.
 
 ## Design Principles
@@ -60,9 +60,12 @@ Current migration state:
 - `created_at`
 - `updated_at`
 
+Milestone 1 uses constrained text for `tracking_type` and `time_group`. Habits are archived/deactivated rather than hard-deleted during normal app use so historical entries remain meaningful.
+
 `habit_schedules`
 
 - `id` primary key
+- `user_id` references `profiles.id`
 - `habit_id` references `habits.id`
 - `schedule_type`
 - `weekdays`
@@ -79,6 +82,8 @@ For `every_x_days`, `anchor_date` is required and recurrence is calculated relat
 
 For `times_per_month`, the schedule sets a monthly completion target without requiring exact calendar dates. V1 should not become a full recurrence engine.
 
+Milestone 1 enforces straightforward structural schedule constraints in the database. Higher-level recurrence conflict validation remains in application/domain logic and tests.
+
 `habit_entries`
 
 - `id` primary key
@@ -94,6 +99,8 @@ For `times_per_month`, the schedule sets a monthly completion target without req
 - `created_at`
 - `updated_at`
 - `deleted_at`
+
+V1 stores one aggregate active entry per habit per calendar date. Duration, numeric, and quantity values represent the day's aggregate value, not individual same-day sessions.
 
 ### Routines
 
@@ -113,6 +120,7 @@ For `times_per_month`, the schedule sets a monthly completion target without req
 `routine_steps`
 
 - `id` primary key
+- `user_id` references `profiles.id`
 - `routine_group_id` references `routine_groups.id`
 - `linked_habit_id` nullable reference to `habits.id`
 - `name`
@@ -121,6 +129,23 @@ For `times_per_month`, the schedule sets a monthly completion target without req
 - `archived_at`
 - `created_at`
 - `updated_at`
+
+Linked routine steps write completion/value state through the linked habit's `habit_entries`.
+
+`routine_step_entries`
+
+- `id` primary key
+- `user_id` references `profiles.id`
+- `routine_step_id` references `routine_steps.id`
+- `entry_date`
+- `completed`
+- `notes`
+- `source`
+- `created_at`
+- `updated_at`
+- `deleted_at`
+
+Unlinked routine steps write completion through `routine_step_entries`. Do not create duplicate completion records in both systems for the same step.
 
 ### Goals and Sprints
 

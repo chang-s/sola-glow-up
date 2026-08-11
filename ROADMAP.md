@@ -10,10 +10,10 @@
 
 ## Current Roadmap State
 
-**Current Phase:** Milestone 0 complete; Milestone 1 not yet approved  
-**Current Status:** COMPLETE  
+**Current Phase:** Milestone 1 - Universal Habits and Routines  
+**Current Status:** IN PROGRESS  
 **Active Autonomy Level:** Level 2 - Trusted Development  
-**Next Approved Task:** Awaiting Sola approval to begin Milestone 1; do not begin Milestone 1 yet.
+**Next Approved Task:** Review `0003_habits_and_routines.sql`; do not apply remote migrations until Sola approves.
 
 Agents should never guess what to work on when `Next Approved Task` exists.
 
@@ -71,7 +71,7 @@ Explicit Non-Scope:
 
 ## Milestone 1 - Universal Habits and Routines
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 Objective:
 Build configurable daily behavior tracking.

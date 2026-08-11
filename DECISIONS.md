@@ -155,3 +155,36 @@ Milestone 0 demonstrated reliable scope discipline, reproducible validation, doc
 
 Consequences:
 Level 2 permissions are exactly those documented in `AGENTS.md`: agents may install reasonable dependencies when clearly required by an approved task, create non-destructive migrations, commit approved-scope work, work through multiple related roadmap tasks, and maintain project documentation automatically. High-risk actions, pushes, deployments, remote migrations, secrets, production data changes, and all permanent STOP conditions still require explicit approval where documented.
+
+## 2026-08-10 - Milestone 1 Habit and Routine Schema Approval
+
+Decision:
+Approve Milestone 1 implementation for universal habits and routines using one aggregate active `habit_entries` row per habit per calendar date.
+
+Rationale:
+V1 needs fast daily completion and simple deterministic history rather than session-level habit logging.
+
+Consequences:
+Enforce one non-deleted `habit_entries` row per `habit_id` plus `entry_date`. Numeric, duration, and quantity habits store the day's aggregate value. Do not implement session-level habit logging in Milestone 1.
+
+## 2026-08-10 - Routine Step Completion Sources
+
+Decision:
+Routine steps may exist without linked habits. Linked routine steps write completion/value state through `habit_entries`; unlinked routine steps write completion through `routine_step_entries`.
+
+Rationale:
+Routine steps should support granular skincare, haircare, body care, and similar checklist items without forcing every step to become a first-class habit.
+
+Consequences:
+Do not create duplicate completion records in both systems for the same routine step. `routine_step_entries` is only for unlinked routine step completion.
+
+## 2026-08-10 - Milestone 1 Schedule Conflict Boundary
+
+Decision:
+Use straightforward database constraints for schedule shape and date ranges, and keep higher-level recurrence conflict validation in application/domain logic and tests.
+
+Rationale:
+V1 recurrence should stay intentionally simple. Full recurrence-overlap detection with complex Postgres range/exclusion machinery would be disproportionate for Milestone 1.
+
+Consequences:
+The database enforces valid schedule fields, date ordering, and one active schedule definition of each schedule type per habit. Application/domain tests must guard against ambiguous due-date definitions beyond that structural boundary.

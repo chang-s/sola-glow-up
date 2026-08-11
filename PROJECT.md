@@ -4,11 +4,11 @@ Sola Glow-Up is a private, single-user personal growth and wellness tracker for 
 
 ## Current Status
 
-**Current Phase:** Milestone 0 complete; Milestone 1 not yet approved  
-**Current Status:** COMPLETE  
+**Current Phase:** Milestone 1 - Universal Habits and Routines  
+**Current Status:** IN PROGRESS  
 **Active Autonomy Level:** Level 2 - Trusted Development  
-**Current Priority:** Review and approve the Milestone 1 habit/routine schema before implementation.  
-**Next Approved Task:** Awaiting Sola approval to begin Milestone 1; do not begin Milestone 1 yet.
+**Current Priority:** Prepare the local non-destructive Milestone 1 habit/routine migration for review.  
+**Next Approved Task:** Review `0003_habits_and_routines.sql`; do not apply remote migrations until Sola approves.
 
 ## Product Principles
 
@@ -56,7 +56,7 @@ Material contradictions between these documents are a STOP condition. Do not sil
 - Build: `pnpm build`
 - Preview built app: `pnpm preview`
 
-Do not begin Milestone 1 until Sola explicitly approves it.
+Do not begin Milestone 2 until Sola explicitly approves it.
 
 ## Milestone 0 Completion Notes
 
