@@ -12,8 +12,8 @@
 
 **Current Phase:** Milestone 0 complete; Milestone 1 not yet approved  
 **Current Status:** COMPLETE  
-**Active Autonomy Level:** Level 1 - Supervised Development  
-**Next Approved Task:** Awaiting Sola approval for the initial Git commit; do not begin Milestone 1.
+**Active Autonomy Level:** Level 2 - Trusted Development  
+**Next Approved Task:** Awaiting Sola approval to begin Milestone 1; do not begin Milestone 1 yet.
 
 Agents should never guess what to work on when `Next Approved Task` exists.
 

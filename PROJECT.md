@@ -6,9 +6,9 @@ Sola Glow-Up is a private, single-user personal growth and wellness tracker for 
 
 **Current Phase:** Milestone 0 complete; Milestone 1 not yet approved  
 **Current Status:** COMPLETE  
-**Active Autonomy Level:** Level 1 - Supervised Development  
-**Current Priority:** Establish the local Git baseline for the completed Milestone 0 foundation.  
-**Next Approved Task:** Awaiting Sola approval for the initial Git commit; do not begin Milestone 1.
+**Active Autonomy Level:** Level 2 - Trusted Development  
+**Current Priority:** Review and approve the Milestone 1 habit/routine schema before implementation.  
+**Next Approved Task:** Awaiting Sola approval to begin Milestone 1; do not begin Milestone 1 yet.
 
 ## Product Principles
 

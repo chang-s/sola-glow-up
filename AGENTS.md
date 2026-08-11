@@ -16,7 +16,7 @@ If these documents materially contradict each other, stop and ask Sola before pr
 
 ## Active Autonomy Level
 
-**Level 1 - Supervised Development**
+**Level 2 - Trusted Development**
 
 The agent must never assume a higher autonomy level than the one explicitly recorded in project documentation.
 

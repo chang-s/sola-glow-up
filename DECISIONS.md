@@ -144,3 +144,14 @@ Stubborn failures should not lead to broad, destructive, or misleading changes.
 
 Consequences:
 When blocked, agents must report the failure, attempts, evidence, hypothesis, and recommended next step. Tests, TypeScript, lint, accessibility checks, and runtime errors may only be changed or narrowed for documented, technically appropriate reasons within approved scope.
+
+## 2026-08-10 - Promote to Level 2
+
+Decision:
+Promote the project from Level 1 - Supervised Development to Level 2 - Trusted Development after the completed Milestone 0 baseline was committed and pushed to a private GitHub repository.
+
+Rationale:
+Milestone 0 demonstrated reliable scope discipline, reproducible validation, documented Supabase migration handling, and enough project documentation for a fresh Codex session to reconstruct the current state.
+
+Consequences:
+Level 2 permissions are exactly those documented in `AGENTS.md`: agents may install reasonable dependencies when clearly required by an approved task, create non-destructive migrations, commit approved-scope work, work through multiple related roadmap tasks, and maintain project documentation automatically. High-risk actions, pushes, deployments, remote migrations, secrets, production data changes, and all permanent STOP conditions still require explicit approval where documented.
