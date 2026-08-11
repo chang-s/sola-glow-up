@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+	<title id="title">Sola Glow-Up placeholder icon</title>
+	<desc id="desc">A pixel-inspired sparkling heart placeholder.</desc>
+	<rect width="512" height="512" rx="72" fill="#fff7ed"/>
+	<path fill="#33251f" d="M104 128h64v32h32v32h32v-32h32v-32h64v32h32v96h-32v64h-32v32h-32v32h-32v32h-32v-32h-32v-32h-32v-32h-32v-64H72v-96h32z"/>
+	<path fill="#f7a7b8" d="M136 160h64v32h32v64h-32v32h32v32h32v-32h32v-32h-32v-64h32v-32h64v96h-32v64h-32v32h-32v32h-32v-32h-32v-32h-32v-64h-32z"/>
+	<path fill="#ffe39f" d="M344 96h32v48h48v32h-48v48h-32v-48h-48v-32h48z"/>
+	<path fill="#7fc7a6" d="M96 336h32v32h32v32h-32v32H96v-32H64v-32h32z"/>
+</svg>

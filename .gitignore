@@ -1,0 +1,16 @@
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+playwright-report/
+test-results/
+supabase/.temp/
+.env
+.env.*
+!.env.example
+.vercel/
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
