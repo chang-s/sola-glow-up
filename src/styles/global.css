@@ -94,7 +94,7 @@ select:focus-visible {
 	margin: 0;
 	color: var(--muted);
 	font-size: 0.78rem;
-	font-weight: 700;
+	font-weight: 650;
 	text-transform: uppercase;
 }
 
@@ -154,7 +154,7 @@ select:focus-visible {
 
 .nav-item.active {
 	color: var(--rose-deep);
-	font-weight: 800;
+	font-weight: 650;
 }
 
 .main-panel {
@@ -206,7 +206,7 @@ select:focus-visible {
 	border: 0;
 	border-radius: 0.5rem;
 	cursor: pointer;
-	font-weight: 800;
+	font-weight: 650;
 }
 
 .text-button {
@@ -244,7 +244,7 @@ select:focus-visible {
 .login-form label {
 	display: grid;
 	gap: 0.4rem;
-	font-weight: 800;
+	font-weight: 650;
 }
 
 .login-form input {
@@ -304,7 +304,74 @@ select:focus-visible {
 
 .surface-header time {
 	color: var(--muted);
-	font-weight: 800;
+	font-weight: 650;
+}
+
+.date-controls {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.45rem;
+	flex-wrap: wrap;
+}
+
+.date-controls label {
+	display: grid;
+	gap: 0.2rem;
+}
+
+.date-controls label span {
+	color: var(--muted);
+	font-size: 0.72rem;
+	font-weight: 650;
+	text-transform: uppercase;
+}
+
+.date-controls input {
+	max-width: 10rem;
+	border: 1px solid var(--line);
+	border-radius: 0.45rem;
+	padding: 0.55rem 0.65rem;
+	background: #fff;
+	color: var(--ink);
+}
+
+.date-controls button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.35rem;
+	border: 0;
+	border-radius: 0.45rem;
+	background: var(--ink);
+	color: #fffdf8;
+	cursor: pointer;
+}
+
+.settings-sections {
+	display: grid;
+	gap: 1.25rem;
+}
+
+.settings-section {
+	display: grid;
+	gap: 0.85rem;
+	padding-top: 0.25rem;
+}
+
+.section-heading {
+	display: flex;
+	align-items: end;
+	justify-content: space-between;
+	gap: 1rem;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 0.65rem;
+}
+
+.section-heading h3 {
+	margin: 0;
+	font-size: 1.45rem;
+	letter-spacing: 0;
 }
 
 .surface-grid {
@@ -329,8 +396,15 @@ select:focus-visible {
 }
 
 .tool-panel h3,
+.tool-panel h4,
 .tool-panel p {
 	margin: 0;
+}
+
+.tool-panel h3,
+.tool-panel h4 {
+	font-size: 1.08rem;
+	font-weight: 720;
 }
 
 .panel-state {
@@ -360,7 +434,15 @@ select:focus-visible {
 .form-grid label span {
 	color: var(--muted);
 	font-size: 0.82rem;
-	font-weight: 800;
+	font-weight: 650;
+}
+
+.form-grid label em {
+	margin-left: 0.25rem;
+	color: #8d756b;
+	font-size: 0.72rem;
+	font-style: normal;
+	font-weight: 500;
 }
 
 .form-grid input,
@@ -387,7 +469,7 @@ select:focus-visible {
 	background: var(--ink);
 	color: #fffdf8;
 	cursor: pointer;
-	font-weight: 800;
+	font-weight: 650;
 }
 
 .tool-panel button:disabled {
@@ -402,6 +484,39 @@ select:focus-visible {
 	border: 1px solid var(--line);
 	border-radius: 0.5rem;
 	background: #fffdf8;
+}
+
+.value-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(8rem, 13rem);
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	border: 1px solid var(--line);
+	border-radius: 0.5rem;
+	background: #fffdf8;
+}
+
+.value-entry {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+}
+
+.value-entry button {
+	white-space: nowrap;
+}
+
+.done-list .check-row,
+.done-list .value-row {
+	background: #f3fbf6;
+	border-color: rgba(127, 199, 166, 0.55);
+}
+
+.done-list strong {
+	text-decoration: line-through;
+	text-decoration-thickness: 0.08em;
+	text-decoration-color: rgba(51, 37, 31, 0.45);
 }
 
 .check-row.compact,
@@ -424,7 +539,8 @@ select:focus-visible {
 }
 
 .check-row small,
-.manage-row small {
+.manage-row small,
+.value-row small {
 	display: block;
 	color: var(--muted);
 	font-size: 0.78rem;
@@ -520,7 +636,80 @@ select:focus-visible {
 	background: #fff;
 	color: var(--muted);
 	font-size: 0.78rem;
-	font-weight: 800;
+	font-weight: 650;
+}
+
+.compact-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.75rem;
+	align-items: end;
+}
+
+.narrow-field {
+	max-width: 14rem;
+}
+
+.routine-step-builder,
+.routine-step-draft {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.routine-step-builder {
+	padding: 0.8rem;
+	border: 1px solid var(--line);
+	border-radius: 0.5rem;
+	background: #fff7ed;
+}
+
+.routine-step-draft {
+	grid-template-columns: minmax(0, 1fr) minmax(12rem, 18rem);
+	align-items: end;
+}
+
+.archive-panel {
+	display: grid;
+	gap: 0.65rem;
+	padding-top: 0.25rem;
+}
+
+.archive-panel summary {
+	cursor: pointer;
+	color: var(--rose-deep);
+	font-weight: 650;
+}
+
+.dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: grid;
+	place-items: center;
+	padding: 1rem;
+	background: rgba(51, 37, 31, 0.28);
+}
+
+.edit-dialog {
+	width: min(100%, 32rem);
+	max-height: calc(100vh - 2rem);
+	overflow: auto;
+	border: 1px solid var(--line);
+	border-radius: 0.6rem;
+	background: var(--paper);
+	box-shadow: var(--shadow);
+	padding: 1rem;
+}
+
+.dialog-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.dialog-heading h3 {
+	margin: 0;
 }
 
 .save-indicator {
@@ -534,7 +723,7 @@ select:focus-visible {
 	border-radius: 0.5rem;
 	background: var(--ink);
 	color: #fffdf8;
-	font-weight: 800;
+	font-weight: 650;
 }
 
 @media (max-width: 800px) {
@@ -595,12 +784,34 @@ select:focus-visible {
 		grid-template-columns: 1fr;
 	}
 
-	.check-row {
+	.check-row,
+	.value-row {
+		grid-template-columns: 1fr;
+	}
+
+	.value-entry,
+	.date-controls {
+		justify-content: flex-start;
+	}
+
+	.compact-fields,
+	.routine-step-draft {
 		grid-template-columns: 1fr;
 	}
 
 	.weekday-grid {
 		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.dialog-backdrop {
+		align-items: end;
+		padding: 0;
+	}
+
+	.edit-dialog {
+		width: 100%;
+		max-height: 86vh;
+		border-radius: 0.85rem 0.85rem 0 0;
 	}
 }
 

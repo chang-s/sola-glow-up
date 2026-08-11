@@ -61,7 +61,6 @@ export async function loadHabitDashboard(profileId: string, dateKey: string) {
 				.from("habits")
 				.select("*")
 				.eq("user_id", profileId)
-				.is("archived_at", null)
 				.order("display_order", { ascending: true })
 				.returns<Habit[]>(),
 			client
@@ -81,14 +80,12 @@ export async function loadHabitDashboard(profileId: string, dateKey: string) {
 				.from("routine_groups")
 				.select("*")
 				.eq("user_id", profileId)
-				.is("archived_at", null)
 				.order("display_order", { ascending: true })
 				.returns<RoutineGroup[]>(),
 			client
 				.from("routine_steps")
 				.select("*")
 				.eq("user_id", profileId)
-				.is("archived_at", null)
 				.order("display_order", { ascending: true })
 				.returns<RoutineStep[]>(),
 			client
@@ -126,7 +123,8 @@ export async function loadHabitDashboard(profileId: string, dateKey: string) {
 
 	const habits: HabitWithSchedule[] = habitsData.map((habit) => ({
 		...habit,
-		schedule: schedulesByHabit.get(habit.id) ?? null,
+		schedule:
+			habit.archived_at || !habit.active ? null : schedulesByHabit.get(habit.id) ?? null,
 		entry: entriesByHabit.get(habit.id) ?? null
 	}));
 
@@ -320,6 +318,44 @@ export async function createRoutineStep(input: {
 	if (result.error) throw new Error(result.error.message);
 }
 
+export async function createRoutine(input: {
+	profileId: string;
+	name: string;
+	category: string | null;
+	timeGroup: TimeGroup;
+	displayOrder: number;
+	steps: Array<{ name: string; linkedHabitId: string | null }>;
+}) {
+	const client = requireSupabase();
+	const groupResult = await client
+		.from("routine_groups")
+		.insert({
+			user_id: input.profileId,
+			name: input.name,
+			category: input.category,
+			time_group: input.timeGroup,
+			display_order: input.displayOrder
+		})
+		.select("id")
+		.single<{ id: string }>();
+
+	if (groupResult.error) throw new Error(groupResult.error.message);
+
+	if (!input.steps.length) return;
+
+	const stepsResult = await client.from("routine_steps").insert(
+		input.steps.map((step, index) => ({
+			user_id: input.profileId,
+			routine_group_id: groupResult.data.id,
+			name: step.name,
+			linked_habit_id: step.linkedHabitId,
+			display_order: index
+		}))
+	);
+
+	if (stepsResult.error) throw new Error(stepsResult.error.message);
+}
+
 export async function updateHabitDetails(input: {
 	id: string;
 	name: string;
@@ -391,6 +427,16 @@ export async function archiveRecord(table: "habits" | "routine_groups" | "routin
 	if (result.error) throw new Error(result.error.message);
 }
 
+export async function restoreRecord(table: "habits" | "routine_groups" | "routine_steps", id: string) {
+	const client = requireSupabase();
+	const result = await client
+		.from(table)
+		.update({ active: true, archived_at: null })
+		.eq("id", id);
+
+	if (result.error) throw new Error(result.error.message);
+}
+
 export async function reorderRecord(
 	table: "habits" | "routine_groups" | "routine_steps",
 	id: string,
@@ -400,4 +446,33 @@ export async function reorderRecord(
 	const result = await client.from(table).update({ display_order: displayOrder }).eq("id", id);
 
 	if (result.error) throw new Error(result.error.message);
+}
+
+export function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
+	if (fromIndex < 0 || fromIndex >= items.length || toIndex < 0 || toIndex >= items.length) {
+		return items;
+	}
+
+	const next = [...items];
+	const [item] = next.splice(fromIndex, 1);
+	next.splice(toIndex, 0, item);
+	return next;
+}
+
+export async function reorderRecords(
+	table: "habits" | "routine_groups" | "routine_steps",
+	items: Array<{ id: string }>
+) {
+	const client = requireSupabase();
+
+	await Promise.all(
+		items.map(async (item, displayOrder) => {
+			const result = await client
+				.from(table)
+				.update({ display_order: displayOrder })
+				.eq("id", item.id);
+
+			if (result.error) throw new Error(result.error.message);
+		})
+	);
 }

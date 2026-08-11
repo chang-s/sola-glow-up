@@ -1,4 +1,5 @@
 import type { HabitSchedule } from "./types";
+import { optionLabel, scheduleOptions } from "./labels";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -49,9 +50,9 @@ export function scheduleLabel(schedule: HabitSchedule | null) {
 
 	switch (schedule.schedule_type) {
 		case "daily":
-			return "Daily";
+			return optionLabel(scheduleOptions, schedule.schedule_type);
 		case "weekdays":
-			return `Weekdays: ${(schedule.weekdays ?? []).join(", ")}`;
+			return `Certain days: ${(schedule.weekdays ?? []).map(weekdayLabel).join(", ")}`;
 		case "times_per_week":
 			return `${schedule.times_per_week}x/week`;
 		case "times_per_month":
@@ -59,8 +60,12 @@ export function scheduleLabel(schedule: HabitSchedule | null) {
 		case "every_x_days":
 			return `Every ${schedule.interval_days} days`;
 		case "optional":
-			return "Optional";
+			return "No schedule";
 	}
+}
+
+function weekdayLabel(day: number) {
+	return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day] ?? String(day);
 }
 
 export function validateScheduleDraft(input: {

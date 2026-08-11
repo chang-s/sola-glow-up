@@ -11,15 +11,15 @@
 ## Current Roadmap State
 
 **Current Phase:** Milestone 1 - Universal Habits and Routines
-**Current Status:** COMPLETE
+**Current Status:** READY FOR REVIEW
 **Active Autonomy Level:** Level 2 - Trusted Development
-**Next Approved Task:** Await Sola's manual Milestone 1 UX feedback; do not begin Milestone 2.
+**Next Approved Task:** Await Sola review of Milestone 1 UX revisions; do not begin Milestone 2.
 
 Agents should never guess what to work on when `Next Approved Task` exists.
 
 ## Milestone 0 - Project Foundation
 
-**Status:** COMPLETE
+**Status:** READY FOR REVIEW
 
 Objective:
 Create the runnable technical foundation without building product features.

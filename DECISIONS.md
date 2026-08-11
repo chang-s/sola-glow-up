@@ -2,16 +2,27 @@
 
 Future agents should append decisions to this log rather than silently rewriting historical decisions. Product-level changes should be proposed here and approved before the PRD is changed.
 
-## 2026-08-11 - Milestone 1 Accepted
+## 2026-08-11 - Milestone 1 Manual UX Review Revisions
 
 Decision:
-Mark Milestone 1 - Universal Habits and Routines as complete.
+Reopen Milestone 1 for focused manual UX review revisions.
 
 Rationale:
-Sola approved the Milestone 1 review after accepting the database verification, implementation validation, scope discipline, and test results.
+Sola's manual review accepted the database architecture and structural behavior, but found the user-facing habit and routine experience too close to the internal data model.
 
 Consequences:
-Do not begin Milestone 2 until Sola explicitly approves it. The next project activity is manual UX review of the completed Milestone 1 habit/routine experience.
+Keep the approved database architecture and Milestone 1 boundaries. Improve language, form flow, visual hierarchy, routine creation, archive restoration, and Today completion behavior before returning Milestone 1 to ready for review. Do not begin Milestone 2.
+
+## 2026-08-11 - Milestone 1 UX Revisions Ready for Review
+
+Decision:
+Return Milestone 1 to ready for review after completing the focused manual UX revision pass.
+
+Rationale:
+The revision pass addressed the approved user-facing feedback without changing the approved database schema, RLS model, or milestone boundaries.
+
+Consequences:
+Milestone 1 remains pending Sola review. Do not begin Milestone 2 until Sola explicitly accepts the revised Milestone 1 experience.
 
 ## 2026-08-10 - External AI-Assisted Meal Logging for V1
 

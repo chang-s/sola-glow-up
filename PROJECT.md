@@ -5,10 +5,10 @@ Sola Glow-Up is a private, single-user personal growth and wellness tracker for 
 ## Current Status
 
 **Current Phase:** Milestone 1 - Universal Habits and Routines
-**Current Status:** COMPLETE
+**Current Status:** READY FOR REVIEW
 **Active Autonomy Level:** Level 2 - Trusted Development
-**Current Priority:** Manual UX review of the accepted Milestone 1 habit/routine experience.
-**Next Approved Task:** Await Sola's manual Milestone 1 UX feedback; do not begin Milestone 2.
+**Current Priority:** Review the completed Milestone 1 manual UX revision pass.
+**Next Approved Task:** Await Sola review of Milestone 1 UX revisions; do not begin Milestone 2.
 
 ## Product Principles
 
@@ -74,7 +74,7 @@ Do not begin Milestone 2 until Sola explicitly approves it.
 
 ## Milestone 1 Completion Notes
 
-- Milestone 1 has been reviewed and accepted by Sola.
+- Milestone 1 manual UX review revisions are complete and ready for review.
 - Universal habit, schedule, habit-entry, routine-group, routine-step, and unlinked routine-step-entry tables exist remotely.
 - Remote Supabase migration history records `0003_habits_and_routines.sql` as applied.
 - Habit and routine tables use owner-only RLS with authenticated `SELECT`, `INSERT`, and `UPDATE` only; `DELETE` is not granted.
@@ -82,6 +82,7 @@ Do not begin Milestone 2 until Sola explicitly approves it.
 - Linked routine steps use `habit_entries`; unlinked routine steps use `routine_step_entries`.
 - Today supports scheduled habit completion, value entry for numeric/duration/quantity habits, routine step completion, and Check All.
 - Settings supports creating, editing, reordering, and archiving habits, routine groups, and routine steps.
+- The Milestone 1 UX revision replaced internal enum/database wording with friendly labels, added habit edit dialogs, archived restore controls, To Do/Done sections, and compact routine creation with steps.
 
 ## Known Technical Debt
 
