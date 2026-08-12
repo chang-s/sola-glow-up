@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { saveV05DailyEntry, setV05ChecklistCompletion } from "./api";
+import { loadV05MotivationData, saveV05DailyEntry, setV05ChecklistCompletion } from "./api";
 
 const supabaseMock = vi.hoisted(() => ({
 	from: vi.fn()
@@ -17,6 +17,19 @@ function upsertSingleChain(data: unknown = {}) {
 	const upsert = vi.fn(() => ({ select }));
 
 	return { upsert, select, single };
+}
+
+function motivationRangeChain(data: unknown[]) {
+	const chain = {
+		select: vi.fn(() => chain),
+		eq: vi.fn(() => chain),
+		gte: vi.fn(() => chain),
+		lte: vi.fn(() => chain),
+		order: vi.fn(() => chain),
+		returns: vi.fn(async () => ({ data, error: null }))
+	};
+
+	return chain;
 }
 
 describe("V0.5 Supabase API", () => {
@@ -88,5 +101,33 @@ describe("V0.5 Supabase API", () => {
 			},
 			{ onConflict: "user_id,entry_date,item_key" }
 		);
+	});
+
+	it("loads motivation data with range queries instead of per-day requests", async () => {
+		const earliestChain = {
+			select: vi.fn(() => earliestChain),
+			eq: vi.fn(() => earliestChain),
+			order: vi.fn(() => earliestChain),
+			limit: vi.fn(() => earliestChain),
+			maybeSingle: vi.fn(async () => ({
+				data: { entry_date: "2026-08-10" },
+				error: null
+			}))
+		};
+		const dailyRangeChain = motivationRangeChain([{ entry_date: "2026-08-12" }]);
+		const checklistRangeChain = motivationRangeChain([{ entry_date: "2026-08-12" }]);
+		supabaseMock.from
+			.mockReturnValueOnce(earliestChain)
+			.mockReturnValueOnce(dailyRangeChain)
+			.mockReturnValueOnce(checklistRangeChain);
+
+		const data = await loadV05MotivationData("profile-1", "2026-08-01", "2026-08-31");
+
+		expect(data.trackingStartDate).toBe("2026-08-10");
+		expect(supabaseMock.from).toHaveBeenCalledTimes(3);
+		expect(dailyRangeChain.gte).toHaveBeenCalledWith("entry_date", "2026-08-01");
+		expect(dailyRangeChain.lte).toHaveBeenCalledWith("entry_date", "2026-08-31");
+		expect(checklistRangeChain.gte).toHaveBeenCalledWith("entry_date", "2026-08-01");
+		expect(checklistRangeChain.lte).toHaveBeenCalledWith("entry_date", "2026-08-31");
 	});
 });

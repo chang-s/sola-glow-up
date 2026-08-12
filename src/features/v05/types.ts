@@ -33,6 +33,12 @@ export type V05TodayData = {
 	checklistCompletions: V05ChecklistCompletion[];
 };
 
+export type V05MotivationData = {
+	trackingStartDate: string | null;
+	dailyEntries: V05DailyEntry[];
+	checklistCompletions: V05ChecklistCompletion[];
+};
+
 export type V05DailyEntryInput = {
 	weight: number | null;
 	steps: number | null;

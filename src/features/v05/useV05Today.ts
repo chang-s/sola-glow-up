@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateProfile } from "../habits/api";
 import { useAuth } from "../auth/useAuth";
 import {
+	loadV05MotivationData,
 	loadV05TodayData,
 	saveV05DailyEntry,
 	setV05ChecklistCompletion
 } from "./api";
+import { getMonthRange } from "./date";
 import type { V05ChecklistItemKey } from "./checklist";
 import type { V05DailyEntryInput } from "./types";
 
@@ -22,15 +24,27 @@ export function useV05Profile() {
 	});
 }
 
-export function useV05Today(dateKey: string) {
+export function useV05Today(dateKey: string, displayMonthKey: string, todayKey: string) {
 	const queryClient = useQueryClient();
 	const profile = useV05Profile();
 	const todayQueryKey = ["v05-today", profile.data?.id, dateKey];
+	const motivationQueryKey = ["v05-motivation", profile.data?.id, displayMonthKey, todayKey];
 
 	const today = useQuery({
 		queryKey: todayQueryKey,
 		enabled: Boolean(profile.data?.id),
 		queryFn: () => loadV05TodayData(profile.data!.id, dateKey)
+	});
+
+	const motivation = useQuery({
+		queryKey: motivationQueryKey,
+		enabled: Boolean(profile.data?.id),
+		queryFn: () => {
+			const monthRange = getMonthRange(displayMonthKey);
+			const rangeStart = monthRange.start < todayKey ? monthRange.start : todayKey;
+			const rangeEnd = monthRange.end > todayKey ? monthRange.end : todayKey;
+			return loadV05MotivationData(profile.data!.id, rangeStart, rangeEnd);
+		}
 	});
 
 	const saveDailyEntry = useMutation({
@@ -40,6 +54,9 @@ export function useV05Today(dateKey: string) {
 		},
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: todayQueryKey });
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-motivation", profile.data?.id]
+			});
 		}
 	});
 
@@ -55,12 +72,16 @@ export function useV05Today(dateKey: string) {
 		},
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: todayQueryKey });
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-motivation", profile.data?.id]
+			});
 		}
 	});
 
 	return {
 		profile,
 		today,
+		motivation,
 		saveDailyEntry,
 		setChecklistCompletion
 	};

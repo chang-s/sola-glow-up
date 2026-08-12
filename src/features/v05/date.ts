@@ -45,6 +45,26 @@ export function addCalendarMonths(dateKey: string, monthOffset: number) {
 	return toLocalDateKey(new Date(date.getFullYear(), date.getMonth() + monthOffset, 1));
 }
 
+export function addCalendarDays(dateKey: string, dayOffset: number) {
+	const date = parseLocalDateKey(dateKey);
+	return toLocalDateKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() + dayOffset));
+}
+
+export function compareDateKeys(left: string, right: string) {
+	return left.localeCompare(right);
+}
+
+export function getMonthRange(dateKey: string) {
+	const selected = parseLocalDateKey(dateKey);
+	const year = selected.getFullYear();
+	const month = selected.getMonth();
+
+	return {
+		start: toLocalDateKey(new Date(year, month, 1)),
+		end: toLocalDateKey(new Date(year, month + 1, 0))
+	};
+}
+
 export function getCalendarLeadingBlanks(dateKey: string) {
 	const selected = parseLocalDateKey(dateKey);
 	return new Date(selected.getFullYear(), selected.getMonth(), 1).getDay();

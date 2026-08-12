@@ -572,6 +572,7 @@ textarea:focus-visible {
 	display: grid;
 	aspect-ratio: 1;
 	min-width: 0;
+	grid-template-rows: minmax(0, 1fr) 0.6rem;
 	place-items: center;
 	border: 2px solid var(--ink);
 	border-radius: 0.15rem;
@@ -580,6 +581,20 @@ textarea:focus-visible {
 	cursor: pointer;
 	font-size: 0.78rem;
 	font-weight: 850;
+}
+
+.calendar-number {
+	align-self: end;
+	line-height: 1;
+}
+
+.calendar-marker {
+	align-self: start;
+	min-height: 0.6rem;
+	color: var(--ink);
+	font-size: 0.58rem;
+	line-height: 1;
+	letter-spacing: 0;
 }
 
 .calendar-day.great {
@@ -608,7 +623,14 @@ textarea:focus-visible {
 	background: #e8ded8;
 	border-style: dashed;
 	opacity: 0.65;
+}
+
+.calendar-day.future {
 	cursor: not-allowed;
+}
+
+.calendar-day.neutral:not(.future) {
+	cursor: pointer;
 }
 
 .calendar-day.spacer {
@@ -620,14 +642,57 @@ textarea:focus-visible {
 }
 
 .numbered-calendar .calendar-day.selected {
-	background: var(--rose);
 	border-color: var(--ink);
-	box-shadow: 0.16rem 0.16rem 0 var(--ink);
+	box-shadow:
+		inset 0 0 0 2px var(--rose),
+		0.16rem 0.16rem 0 var(--ink);
 	opacity: 1;
 }
 
 .numbered-calendar .calendar-day.today:not(.selected) {
-	background: var(--sky);
+	box-shadow: inset 0 0 0 2px var(--sky);
+}
+
+.calendar-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem 0.65rem;
+	align-items: center;
+	color: var(--muted);
+	font-size: 0.68rem;
+	font-weight: 850;
+	text-transform: uppercase;
+}
+
+.calendar-legend span {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.legend-swatch {
+	display: inline-block;
+	width: 0.72rem;
+	aspect-ratio: 1;
+	border: 2px solid var(--ink);
+	border-radius: 0.12rem;
+	background: #fff7ed;
+}
+
+.legend-swatch.great {
+	background: var(--green-strong);
+}
+
+.legend-swatch.good {
+	background: var(--green-soft);
+}
+
+.legend-swatch.some {
+	background: var(--butter);
+}
+
+.legend-swatch.none {
+	background: #f4d6cf;
 }
 
 .mini-note {
@@ -635,6 +700,10 @@ textarea:focus-visible {
 	color: var(--muted);
 	font-size: 0.82rem;
 	line-height: 1.45;
+}
+
+.error-copy {
+	color: #9c3f52;
 }
 
 .streak-list {

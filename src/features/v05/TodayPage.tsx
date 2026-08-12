@@ -30,7 +30,14 @@ import {
 	toLocalDateKey
 } from "./date";
 import { useV05Today } from "./useV05Today";
-import type { V05DailyEntryInput, V05TodayData } from "./types";
+import {
+	calculateStreaks,
+	createCompletionLookup,
+	formatStreakValue,
+	type CompletionState,
+	type StreakId
+} from "./motivation";
+import type { V05DailyEntryInput, V05MotivationData, V05TodayData } from "./types";
 
 type TodayFormState = {
 	weight: string;
@@ -58,15 +65,28 @@ const emptyForm: TodayFormState = {
 	notes: ""
 };
 
-const streakShells = ["Workout", "Good Sleep", "Skincare", "Vitamins", "Logging"];
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const completionLabels: Record<CompletionState, string> = {
+	great: "Great day",
+	good: "Good day",
+	some: "Some progress",
+	none: "No activity",
+	neutral: "Neutral"
+};
+const completionMarkers: Record<CompletionState, string> = {
+	great: "++",
+	good: "+",
+	some: ".",
+	none: "x",
+	neutral: ""
+};
 
-const streakIcons: Record<string, LucideIcon> = {
-	Workout: Dumbbell,
-	"Good Sleep": Moon,
-	Skincare: Sparkles,
-	Vitamins: Pill,
-	Logging: CalendarDays
+const streakIcons: Record<StreakId, LucideIcon> = {
+	workout: Dumbbell,
+	goodSleep: Moon,
+	skincare: Sparkles,
+	vitamins: Pill,
+	logging: CalendarDays
 };
 
 function FieldLabel({
@@ -457,12 +477,18 @@ function TodayMotivation({
 	displayMonthKey,
 	selectedDateKey,
 	todayKey,
+	motivationData,
+	isLoading,
+	hasError,
 	onSelectDate,
 	onChangeMonth
 }: {
 	displayMonthKey: string;
 	selectedDateKey: string;
 	todayKey: string;
+	motivationData: V05MotivationData | undefined;
+	isLoading: boolean;
+	hasError: boolean;
 	onSelectDate: (dateKey: string) => void;
 	onChangeMonth: (monthOffset: number) => void;
 }) {
@@ -473,6 +499,26 @@ function TodayMotivation({
 	const calendarBlanks = useMemo(
 		() => getCalendarLeadingBlanks(displayMonthKey),
 		[displayMonthKey]
+	);
+	const completionLookup = useMemo(
+		() =>
+			createCompletionLookup({
+				entries: motivationData?.dailyEntries ?? [],
+				completions: motivationData?.checklistCompletions ?? [],
+				trackingStartDate: motivationData?.trackingStartDate ?? null,
+				todayKey
+			}),
+		[motivationData, todayKey]
+	);
+	const streaks = useMemo(
+		() =>
+			calculateStreaks({
+				entries: motivationData?.dailyEntries ?? [],
+				completions: motivationData?.checklistCompletions ?? [],
+				trackingStartDate: motivationData?.trackingStartDate ?? null,
+				todayKey
+			}),
+		[motivationData, todayKey]
 	);
 
 	return (
@@ -504,41 +550,75 @@ function TodayMotivation({
 							{Array.from({ length: calendarBlanks }, (_, index) => (
 								<span key={`blank-${index}`} className="calendar-day spacer" />
 							))}
-							{calendarDays.map((day) => (
-								<button
-									type="button"
-									key={day.key}
-									className={`calendar-day neutral ${day.isToday ? "today" : ""} ${
-										day.isFuture ? "future" : ""
-									} ${day.key === selectedDateKey ? "selected" : ""}`}
-									aria-label={`${day.key}${day.isToday ? ", today" : ""}`}
-									aria-current={day.key === selectedDateKey ? "date" : undefined}
-									disabled={day.isFuture}
-									onClick={() => onSelectDate(day.key)}
-								>
-									{day.dayNumber}
-								</button>
+							{calendarDays.map((day) => {
+								const completion = completionLookup(day.key);
+								const stateLabel = day.isFuture
+									? "Future date"
+									: completionLabels[completion.state];
+								const stateClass =
+									completion.state === "none" ? "empty" : completion.state;
+
+								return (
+									<button
+										type="button"
+										key={day.key}
+										className={`calendar-day ${stateClass} ${
+											day.isToday ? "today" : ""
+										} ${day.isFuture ? "future" : ""} ${
+											day.key === selectedDateKey ? "selected" : ""
+										}`}
+										aria-label={`${day.key}, ${stateLabel}${
+											day.isToday ? ", today" : ""
+										}`}
+										aria-current={day.key === selectedDateKey ? "date" : undefined}
+										disabled={day.isFuture}
+										onClick={() => onSelectDate(day.key)}
+									>
+										<span className="calendar-number">{day.dayNumber}</span>
+										<span className="calendar-marker" aria-hidden="true">
+											{completionMarkers[completion.state]}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+						<div className="calendar-legend" aria-label="Calendar completion legend">
+							{(["great", "good", "some", "none"] as CompletionState[]).map((state) => (
+								<span key={state}>
+									<span className={`legend-swatch ${state}`} aria-hidden="true" />
+									{completionLabels[state].replace(" day", "")}
+								</span>
 							))}
 						</div>
-						<p className="mini-note">
-							Real completion colors arrive after daily persistence is stable.
-						</p>
+						{isLoading ? (
+							<p className="mini-note" role="status">
+								Loading month progress...
+							</p>
+						) : null}
+						{hasError ? (
+							<p className="mini-note error-copy" role="status">
+								Motivation panel could not refresh. Your check-in still works.
+							</p>
+						) : null}
+						{!isLoading && !hasError && !motivationData?.trackingStartDate ? (
+							<p className="mini-note">Save a first check-in to begin tracking.</p>
+						) : null}
 					</section>
 
 					<section className="pixel-card" aria-labelledby="streaks-title">
 						<p className="eyebrow">Tiny cheers</p>
 						<h3 id="streaks-title">Current streaks</h3>
 						<div className="streak-list">
-							{streakShells.map((label) => {
-								const Icon = streakIcons[label];
+							{streaks.map((streak) => {
+								const Icon = streakIcons[streak.id];
 
 								return (
-									<div className="streak-card placeholder-streak" key={label}>
+									<div className="streak-card" key={streak.id}>
 										<span className="streak-icon" aria-hidden="true">
 											<Icon size={18} />
 										</span>
-										<span>{label}</span>
-										<small>Coming soon</small>
+										<span>{streak.label}</span>
+										<small>{formatStreakValue(streak.count)}</small>
 									</div>
 								);
 							})}
@@ -553,7 +633,11 @@ export function TodayPage() {
 	const todayKey = toLocalDateKey();
 	const [dateKey, setDateKey] = useState(() => todayKey);
 	const [displayMonthKey, setDisplayMonthKey] = useState(() => toMonthKey(todayKey));
-	const { profile, today, saveDailyEntry, setChecklistCompletion } = useV05Today(dateKey);
+	const { profile, today, motivation, saveDailyEntry, setChecklistCompletion } = useV05Today(
+		dateKey,
+		displayMonthKey,
+		todayKey
+	);
 	const isLoading = profile.isLoading || today.isLoading;
 	const hasLoadError = Boolean(profile.error || today.error);
 	const hasEntry = Boolean(today.data?.dailyEntry);
@@ -606,6 +690,9 @@ export function TodayPage() {
 					displayMonthKey={displayMonthKey}
 					selectedDateKey={dateKey}
 					todayKey={todayKey}
+					motivationData={motivation.data}
+					isLoading={motivation.isLoading}
+					hasError={Boolean(motivation.error)}
 					onSelectDate={handleActiveDateChange}
 					onChangeMonth={(monthOffset) =>
 						setDisplayMonthKey((current) => addCalendarMonths(current, monthOffset))

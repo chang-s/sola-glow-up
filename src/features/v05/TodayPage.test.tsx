@@ -1,12 +1,14 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TodayPage } from "./TodayPage";
-import type { V05TodayData } from "./types";
+import type { V05MotivationData, V05TodayData } from "./types";
 
 const mockSaveDailyEntry = vi.fn();
 const mockSetChecklistCompletion = vi.fn();
 let mockTodayData: V05TodayData;
 let mockTodayDataByDate: Record<string, V05TodayData>;
+let mockMotivationData: V05MotivationData;
+let mockMotivationError: Error | null;
 
 vi.mock("../auth/useAuth", () => ({
 	useAuth: () => ({ isConfigured: true })
@@ -19,6 +21,11 @@ vi.mock("./useV05Today", () => ({
 			isLoading: false,
 			error: null,
 			data: mockTodayDataByDate[dateKey] ?? mockTodayData
+		},
+		motivation: {
+			isLoading: false,
+			error: mockMotivationError,
+			data: mockMotivationData
 		},
 		saveDailyEntry: {
 			isPending: false,
@@ -34,10 +41,16 @@ vi.mock("./useV05Today", () => ({
 
 function renderToday(
 	data: V05TodayData = { dailyEntry: null, checklistCompletions: [] },
-	dataByDate: Record<string, V05TodayData> = {}
+	dataByDate: Record<string, V05TodayData> = {},
+	motivationData: V05MotivationData = {
+		trackingStartDate: "2026-08-10",
+		dailyEntries: [],
+		checklistCompletions: []
+	}
 ) {
 	mockTodayData = data;
 	mockTodayDataByDate = dataByDate;
+	mockMotivationData = motivationData;
 	return render(<TodayPage />);
 }
 
@@ -52,6 +65,12 @@ describe("V0.5 Today page", () => {
 		vi.clearAllMocks();
 		mockTodayData = { dailyEntry: null, checklistCompletions: [] };
 		mockTodayDataByDate = {};
+		mockMotivationData = {
+			trackingStartDate: "2026-08-10",
+			dailyEntries: [],
+			checklistCompletions: []
+		};
+		mockMotivationError = null;
 		mockSaveDailyEntry.mockResolvedValue({});
 		mockSetChecklistCompletion.mockResolvedValue({});
 	});
@@ -229,11 +248,11 @@ describe("V0.5 Today page", () => {
 		renderToday();
 		setEntryDate("2026-08-12");
 
-		fireEvent.click(screen.getByRole("button", { name: "2026-08-11" }));
+		fireEvent.click(screen.getByRole("button", { name: /2026-08-11/ }));
 
 		expect(screen.getByLabelText("Entry date")).toHaveValue("2026-08-11");
 		expect(screen.queryByLabelText("Iron")).not.toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "2026-08-11" })).toHaveAttribute(
+		expect(screen.getByRole("button", { name: /2026-08-11/ })).toHaveAttribute(
 			"aria-current",
 			"date"
 		);
@@ -273,7 +292,7 @@ describe("V0.5 Today page", () => {
 		);
 		setEntryDate("2026-08-12");
 
-		fireEvent.click(screen.getByRole("button", { name: "2026-08-11" }));
+		fireEvent.click(screen.getByRole("button", { name: /2026-08-11/ }));
 
 		expect(screen.getByLabelText(/Weight/)).toHaveValue(183.2);
 		expect(screen.getByLabelText("Steps")).toHaveValue(6400);
@@ -286,7 +305,7 @@ describe("V0.5 Today page", () => {
 		renderToday();
 		setEntryDate("2026-08-12");
 
-		fireEvent.click(screen.getByRole("button", { name: "2026-08-11" }));
+		fireEvent.click(screen.getByRole("button", { name: /2026-08-11/ }));
 		fireEvent.change(screen.getByLabelText(/Weight/), { target: { value: "183" } });
 		fireEvent.click(screen.getByRole("button", { name: "Save today's check-in" }));
 
@@ -304,7 +323,7 @@ describe("V0.5 Today page", () => {
 		renderToday();
 		setEntryDate("2026-08-12");
 
-		expect(screen.getByRole("button", { name: "2026-08-13" })).toBeDisabled();
+		expect(screen.getByRole("button", { name: /2026-08-13/ })).toBeDisabled();
 	});
 
 	it("changes visible calendar month without changing the active date", () => {
@@ -325,5 +344,169 @@ describe("V0.5 Today page", () => {
 		expect(screen.getByLabelText(/Weight/)).toBeInTheDocument();
 		expect(screen.getByLabelText("Steps")).toBeInTheDocument();
 		expect(screen.getByLabelText("Yesterday's calories")).toBeInTheDocument();
+	});
+
+	it("renders real calendar completion states with selected and today states", () => {
+		const { container } = renderToday(
+			{ dailyEntry: null, checklistCompletions: [] },
+			{},
+			{
+				trackingStartDate: "2026-08-10",
+				dailyEntries: [
+					{
+						id: "entry-12",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						weight: null,
+						steps: null,
+						sleep_duration_minutes: null,
+						bedtime: null,
+						wake_time: null,
+						previous_day_calories: null,
+						worked_out: false,
+						workout_activity_type: null,
+						workout_duration_minutes: null,
+						notes: null
+					}
+				],
+				checklistCompletions: [
+					{
+						id: "completion-1",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						item_key: "morning_skincare",
+						completed: true
+					},
+					{
+						id: "completion-2",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						item_key: "evening_skincare",
+						completed: true
+					},
+					{
+						id: "completion-3",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						item_key: "vitamins",
+						completed: true
+					},
+					{
+						id: "completion-4",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						item_key: "minoxidil",
+						completed: true
+					},
+					{
+						id: "completion-5",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						item_key: "workout",
+						completed: true
+					},
+					{
+						id: "completion-6",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						item_key: "iron",
+						completed: true
+					},
+					{
+						id: "completion-7",
+						user_id: "profile-1",
+						entry_date: "2026-08-12",
+						item_key: "irestore_helmet",
+						completed: true
+					}
+				]
+			}
+		);
+		setEntryDate("2026-08-12");
+
+		const selectedToday = screen.getByRole("button", {
+			name: /2026-08-12, Great day, today/
+		});
+
+		expect(selectedToday).toHaveAttribute("aria-current", "date");
+		expect(selectedToday).toHaveClass("great");
+		expect(selectedToday).toHaveClass("today");
+		expect(selectedToday).toHaveClass("selected");
+		expect(container.querySelector(".calendar-legend")).toHaveTextContent("Great");
+	});
+
+	it("shows real streak values and gentle zero text", () => {
+		const { container } = renderToday(
+			{ dailyEntry: null, checklistCompletions: [] },
+			{},
+			{
+				trackingStartDate: "2026-08-10",
+				dailyEntries: [
+					{
+						id: "entry-10",
+						user_id: "profile-1",
+						entry_date: "2026-08-10",
+						weight: null,
+						steps: null,
+						sleep_duration_minutes: null,
+						bedtime: null,
+						wake_time: null,
+						previous_day_calories: null,
+						worked_out: false,
+						workout_activity_type: null,
+						workout_duration_minutes: null,
+						notes: null
+					},
+					{
+						id: "entry-11",
+						user_id: "profile-1",
+						entry_date: "2026-08-11",
+						weight: null,
+						steps: null,
+						sleep_duration_minutes: null,
+						bedtime: null,
+						wake_time: null,
+						previous_day_calories: null,
+						worked_out: false,
+						workout_activity_type: null,
+						workout_duration_minutes: null,
+						notes: null
+					}
+				],
+				checklistCompletions: [
+					{
+						id: "vitamins-10",
+						user_id: "profile-1",
+						entry_date: "2026-08-10",
+						item_key: "vitamins",
+						completed: true
+					},
+					{
+						id: "vitamins-11",
+						user_id: "profile-1",
+						entry_date: "2026-08-11",
+						item_key: "vitamins",
+						completed: true
+					}
+				]
+			}
+		);
+		const streakList = container.querySelector<HTMLElement>(".streak-list")!;
+		const streaks = within(streakList);
+
+		expect(streaks.getByText("Vitamins").closest(".streak-card")).toHaveTextContent("2 days");
+		expect(streaks.getByText("Workout").closest(".streak-card")).toHaveTextContent(
+			"Start today"
+		);
+	});
+
+	it("keeps Today usable if the motivational summary query fails", () => {
+		mockMotivationError = new Error("raw progress query");
+		renderToday();
+
+		expect(screen.getByLabelText(/Weight/)).toBeInTheDocument();
+		expect(screen.getByText("Motivation panel could not refresh. Your check-in still works."))
+			.toBeInTheDocument();
+		expect(screen.queryByText("raw progress query")).not.toBeInTheDocument();
 	});
 });

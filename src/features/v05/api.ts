@@ -4,6 +4,7 @@ import type {
 	V05ChecklistCompletion,
 	V05DailyEntry,
 	V05DailyEntryInput,
+	V05MotivationData,
 	V05TodayData
 } from "./types";
 
@@ -46,6 +47,62 @@ export async function loadV05TodayData(
 
 	return {
 		dailyEntry: dailyEntryResult.data ?? null,
+		checklistCompletions: checklistResult.data ?? []
+	};
+}
+
+export async function loadV05MotivationData(
+	profileId: string,
+	rangeStart: string,
+	rangeEnd: string
+): Promise<V05MotivationData> {
+	const client = requireSupabase();
+
+	const earliestEntryResult = await client
+		.from("v05_daily_entries")
+		.select("entry_date")
+		.eq("user_id", profileId)
+		.order("entry_date", { ascending: true })
+		.limit(1)
+		.maybeSingle<{ entry_date: string }>();
+
+	friendlyError(earliestEntryResult.error);
+
+	const trackingStartDate = earliestEntryResult.data?.entry_date ?? null;
+	if (!trackingStartDate) {
+		return {
+			trackingStartDate: null,
+			dailyEntries: [],
+			checklistCompletions: []
+		};
+	}
+
+	const effectiveRangeStart = rangeStart < trackingStartDate ? rangeStart : trackingStartDate;
+
+	const [dailyEntriesResult, checklistResult] = await Promise.all([
+		client
+			.from("v05_daily_entries")
+			.select("*")
+			.eq("user_id", profileId)
+			.gte("entry_date", effectiveRangeStart)
+			.lte("entry_date", rangeEnd)
+			.order("entry_date", { ascending: true })
+			.returns<V05DailyEntry[]>(),
+		client
+			.from("v05_checklist_completions")
+			.select("*")
+			.eq("user_id", profileId)
+			.gte("entry_date", effectiveRangeStart)
+			.lte("entry_date", rangeEnd)
+			.returns<V05ChecklistCompletion[]>()
+	]);
+
+	friendlyError(dailyEntriesResult.error);
+	friendlyError(checklistResult.error);
+
+	return {
+		trackingStartDate,
+		dailyEntries: dailyEntriesResult.data ?? [],
 		checklistCompletions: checklistResult.data ?? []
 	};
 }
