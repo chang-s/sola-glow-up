@@ -1,0 +1,617 @@
+import { type FormEvent, type ReactNode, useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+	Bed,
+	CalendarDays,
+	Check,
+	ChevronLeft,
+	ChevronRight,
+	Dumbbell,
+	Moon,
+	PencilLine,
+	Pill,
+	ShieldCheck,
+	Sparkles,
+	SportShoe,
+	Sun,
+	Timer,
+	Utensils,
+	Weight
+} from "lucide-react";
+import { useAuth } from "../auth/useAuth";
+import { getDueChecklistItems, type V05ChecklistItemKey } from "./checklist";
+import {
+	formatFriendlyDate,
+	formatMonthYear,
+	addCalendarMonths,
+	getCalendarDays,
+	getCalendarLeadingBlanks,
+	toMonthKey,
+	toLocalDateKey
+} from "./date";
+import { useV05Today } from "./useV05Today";
+import type { V05DailyEntryInput, V05TodayData } from "./types";
+
+type TodayFormState = {
+	weight: string;
+	steps: string;
+	sleepHours: string;
+	sleepMinutes: string;
+	bedtime: string;
+	wakeTime: string;
+	previousDayCalories: string;
+	workoutActivityType: string;
+	workoutDurationMinutes: string;
+	notes: string;
+};
+
+const emptyForm: TodayFormState = {
+	weight: "",
+	steps: "",
+	sleepHours: "",
+	sleepMinutes: "",
+	bedtime: "",
+	wakeTime: "",
+	previousDayCalories: "",
+	workoutActivityType: "",
+	workoutDurationMinutes: "",
+	notes: ""
+};
+
+const streakShells = ["Workout", "Good Sleep", "Skincare", "Vitamins", "Logging"];
+const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const streakIcons: Record<string, LucideIcon> = {
+	Workout: Dumbbell,
+	"Good Sleep": Moon,
+	Skincare: Sparkles,
+	Vitamins: Pill,
+	Logging: CalendarDays
+};
+
+function FieldLabel({
+	Icon,
+	children
+}: {
+	Icon: LucideIcon;
+	children: ReactNode;
+}) {
+	return (
+		<span className="field-label">
+			<span className="field-icon" aria-hidden="true">
+				<Icon size={14} />
+			</span>
+			<span>{children}</span>
+		</span>
+	);
+}
+
+function toNumberOrNull(value: string, allowDecimal = false) {
+	const trimmed = value.trim();
+	if (!trimmed) return null;
+	const parsed = allowDecimal ? Number(trimmed) : Number.parseInt(trimmed, 10);
+	return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toTimeOrNull(value: string) {
+	return value ? value : null;
+}
+
+function toFormState(data: V05TodayData | undefined): TodayFormState {
+	const entry = data?.dailyEntry;
+	if (!entry) return emptyForm;
+
+	const sleepDuration = entry.sleep_duration_minutes;
+
+	return {
+		weight: entry.weight == null ? "" : String(entry.weight),
+		steps: entry.steps == null ? "" : String(entry.steps),
+		sleepHours: sleepDuration == null ? "" : String(Math.floor(sleepDuration / 60)),
+		sleepMinutes: sleepDuration == null ? "" : String(sleepDuration % 60),
+		bedtime: entry.bedtime?.slice(0, 5) ?? "",
+		wakeTime: entry.wake_time?.slice(0, 5) ?? "",
+		previousDayCalories:
+			entry.previous_day_calories == null ? "" : String(entry.previous_day_calories),
+		workoutActivityType: entry.workout_activity_type ?? "",
+		workoutDurationMinutes:
+			entry.workout_duration_minutes == null ? "" : String(entry.workout_duration_minutes),
+		notes: entry.notes ?? ""
+	};
+}
+
+function getChecklistState(data: V05TodayData | undefined) {
+	const state: Partial<Record<V05ChecklistItemKey, boolean>> = {};
+
+	for (const completion of data?.checklistCompletions ?? []) {
+		state[completion.item_key] = completion.completed;
+	}
+
+	if (data?.dailyEntry?.worked_out && state.workout === undefined) {
+		state.workout = true;
+	}
+
+	return state;
+}
+
+function toDailyEntryInput(
+	form: TodayFormState,
+	workedOut: boolean
+): V05DailyEntryInput {
+	const sleepHours = toNumberOrNull(form.sleepHours) ?? 0;
+	const sleepMinutes = toNumberOrNull(form.sleepMinutes) ?? 0;
+	const hasSleepDuration = form.sleepHours.trim() || form.sleepMinutes.trim();
+
+	return {
+		weight: toNumberOrNull(form.weight, true),
+		steps: toNumberOrNull(form.steps),
+		sleep_duration_minutes: hasSleepDuration ? sleepHours * 60 + sleepMinutes : null,
+		bedtime: toTimeOrNull(form.bedtime),
+		wake_time: toTimeOrNull(form.wakeTime),
+		previous_day_calories: toNumberOrNull(form.previousDayCalories),
+		worked_out: workedOut,
+		workout_activity_type: workedOut ? form.workoutActivityType.trim() || null : null,
+		workout_duration_minutes: workedOut
+			? toNumberOrNull(form.workoutDurationMinutes)
+			: null,
+		notes: form.notes.trim() || null
+	};
+}
+
+function statusText(
+	isSavingFields: boolean,
+	isSavingChecklist: boolean,
+	hasEntry: boolean,
+	saveStatus: "idle" | "saved" | "error"
+) {
+	if (isSavingFields || isSavingChecklist) return "Saving...";
+	if (saveStatus === "saved") return "Saved";
+	if (saveStatus === "error") return "Could not save";
+	return hasEntry ? "Saved entry loaded" : "No saved check-in yet";
+}
+
+type TodayHook = ReturnType<typeof useV05Today>;
+
+type TodayCheckInProps = {
+	dateKey: string;
+	isConfigured: boolean;
+	isLoading: boolean;
+	hasLoadError: boolean;
+	hasEntry: boolean;
+	todayData: V05TodayData | undefined;
+	saveDailyEntry: TodayHook["saveDailyEntry"];
+	setChecklistCompletion: TodayHook["setChecklistCompletion"];
+};
+
+function TodayCheckIn({
+	dateKey,
+	isConfigured,
+	isLoading,
+	hasLoadError,
+	hasEntry,
+	todayData,
+	saveDailyEntry,
+	setChecklistCompletion
+}: TodayCheckInProps) {
+	const [form, setForm] = useState<TodayFormState>(() => toFormState(todayData));
+	const [checklistState, setChecklistState] = useState<
+		Partial<Record<V05ChecklistItemKey, boolean>>
+	>(() => getChecklistState(todayData));
+	const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+	const dueItems = useMemo(() => getDueChecklistItems(dateKey), [dateKey]);
+	const workedOut = Boolean(checklistState.workout);
+	const isSavingFields = saveDailyEntry.isPending;
+	const isSavingChecklist = setChecklistCompletion.isPending;
+
+	function updateForm<Field extends keyof TodayFormState>(
+		field: Field,
+		value: TodayFormState[Field]
+	) {
+		setForm((current) => ({ ...current, [field]: value }));
+		setSaveStatus("idle");
+	}
+
+	async function handleChecklistChange(itemKey: V05ChecklistItemKey, completed: boolean) {
+		const previous = checklistState[itemKey] ?? false;
+		setChecklistState((current) => ({ ...current, [itemKey]: completed }));
+		setSaveStatus("idle");
+
+		if (itemKey === "workout" && !completed) {
+			setForm((current) => ({
+				...current,
+				workoutActivityType: "",
+				workoutDurationMinutes: ""
+			}));
+		}
+
+		try {
+			await setChecklistCompletion.mutateAsync({ itemKey, completed });
+			setSaveStatus("saved");
+		} catch {
+			setChecklistState((current) => ({ ...current, [itemKey]: previous }));
+			setSaveStatus("error");
+		}
+	}
+
+	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+
+		try {
+			await saveDailyEntry.mutateAsync(toDailyEntryInput(form, workedOut));
+			setSaveStatus("saved");
+		} catch {
+			setSaveStatus("error");
+		}
+	}
+
+	return (
+		<form className="quest-board" aria-labelledby="checkin-title" onSubmit={handleSubmit}>
+					<div className="board-clip" aria-hidden="true" />
+					<div className="section-heading compact">
+						<div>
+							<p className="eyebrow">{formatFriendlyDate(dateKey)}</p>
+							<h3 id="checkin-title">Daily check-in</h3>
+						</div>
+						<span className={`status-chip ${saveStatus === "error" ? "error-chip" : ""}`}>
+							{statusText(isSavingFields, isSavingChecklist, hasEntry, saveStatus)}
+						</span>
+					</div>
+
+					{!isConfigured ? (
+						<section className="setup-panel" role="status">
+							<strong>Supabase setup pending</strong>
+							<span>Sign-in data will save here once Supabase is configured.</span>
+						</section>
+					) : null}
+
+					{isLoading ? (
+						<section className="panel-state" role="status">
+							Loading today's saved check-in...
+						</section>
+					) : null}
+
+					{hasLoadError ? (
+						<section className="panel-state error-state" role="alert">
+							Today's check-in could not load. Please try refreshing.
+						</section>
+					) : null}
+
+					<fieldset className="checklist-fieldset" disabled={!isConfigured || isLoading}>
+						<legend>Checklist</legend>
+						<div className="check-preview-list">
+							{dueItems.map((item) => (
+								<label className="check-preview real-check" key={item.key}>
+									<input
+										type="checkbox"
+										checked={Boolean(checklistState[item.key])}
+										onChange={(event) =>
+											void handleChecklistChange(item.key, event.target.checked)
+										}
+									/>
+									<span className="tiny-checkbox" aria-hidden="true">
+										<Check size={14} />
+									</span>
+									<span>{item.label}</span>
+								</label>
+							))}
+						</div>
+					</fieldset>
+
+					<div className="daily-input-grid">
+						<label>
+							<FieldLabel Icon={Weight}>
+								Weight <em>lb</em>
+							</FieldLabel>
+							<input
+								type="number"
+								inputMode="decimal"
+								min="0"
+								step="0.1"
+								value={form.weight}
+								onChange={(event) => updateForm("weight", event.target.value)}
+							/>
+						</label>
+						<label>
+							<FieldLabel Icon={SportShoe}>Steps</FieldLabel>
+							<input
+								type="number"
+								inputMode="numeric"
+								min="0"
+								step="1"
+								value={form.steps}
+								onChange={(event) => updateForm("steps", event.target.value)}
+							/>
+						</label>
+						<label>
+							<FieldLabel Icon={Moon}>Sleep hours</FieldLabel>
+							<input
+								type="number"
+								inputMode="numeric"
+								min="0"
+								step="1"
+								value={form.sleepHours}
+								onChange={(event) => updateForm("sleepHours", event.target.value)}
+							/>
+						</label>
+						<label>
+							<FieldLabel Icon={Moon}>Sleep minutes</FieldLabel>
+							<input
+								type="number"
+								inputMode="numeric"
+								min="0"
+								max="59"
+								step="1"
+								value={form.sleepMinutes}
+								onChange={(event) => updateForm("sleepMinutes", event.target.value)}
+							/>
+						</label>
+						<label>
+							<FieldLabel Icon={Bed}>Bedtime</FieldLabel>
+							<input
+								type="time"
+								value={form.bedtime}
+								onChange={(event) => updateForm("bedtime", event.target.value)}
+							/>
+						</label>
+						<label>
+							<FieldLabel Icon={Sun}>Wake-up time</FieldLabel>
+							<input
+								type="time"
+								value={form.wakeTime}
+								onChange={(event) => updateForm("wakeTime", event.target.value)}
+							/>
+						</label>
+						<label>
+							<FieldLabel Icon={Utensils}>Yesterday's calories</FieldLabel>
+							<input
+								type="number"
+								inputMode="numeric"
+								min="0"
+								step="1"
+								value={form.previousDayCalories}
+								onChange={(event) =>
+									updateForm("previousDayCalories", event.target.value)
+								}
+							/>
+						</label>
+						<label className="wide-field">
+							<FieldLabel Icon={PencilLine}>Tiny note</FieldLabel>
+							<input
+								type="text"
+								value={form.notes}
+								onChange={(event) => updateForm("notes", event.target.value)}
+							/>
+						</label>
+					</div>
+
+					<section
+						className={`workout-details ${workedOut ? "" : "inactive"}`}
+						aria-labelledby="workout-details-title"
+					>
+						<div>
+							<p className="eyebrow">Workout</p>
+							<h4 id="workout-details-title">Activity details</h4>
+						</div>
+						<div className="daily-input-grid two-column">
+							<label>
+								<FieldLabel Icon={Dumbbell}>Activity type</FieldLabel>
+								<input
+									type="text"
+									value={form.workoutActivityType}
+									disabled={!workedOut}
+									onChange={(event) =>
+										updateForm("workoutActivityType", event.target.value)
+									}
+								/>
+							</label>
+							<label>
+								<FieldLabel Icon={Timer}>
+									Duration <em>minutes</em>
+								</FieldLabel>
+								<input
+									type="number"
+									inputMode="numeric"
+									min="0"
+									step="1"
+									value={form.workoutDurationMinutes}
+									disabled={!workedOut}
+									onChange={(event) =>
+										updateForm("workoutDurationMinutes", event.target.value)
+									}
+								/>
+							</label>
+						</div>
+						{!workedOut ? (
+							<p className="mini-note">Check Worked Out to add activity details.</p>
+						) : null}
+					</section>
+
+					<section className="food-photo-preview" aria-labelledby="food-photo-title">
+						<PencilLine aria-hidden="true" size={18} />
+						<div>
+							<h4 id="food-photo-title">Food photos later</h4>
+							<p className="mini-note">
+								Upload and scrapbook features are planned for the next History/Food step.
+							</p>
+						</div>
+					</section>
+
+					{saveStatus === "error" ? (
+						<p className="form-error" role="alert">
+							Your check-in could not save. Please try again.
+						</p>
+					) : null}
+
+					<button
+						type="submit"
+						className="save-checkin-button"
+						disabled={!isConfigured || isLoading || isSavingFields}
+					>
+						<ShieldCheck aria-hidden="true" size={18} />
+						{isSavingFields ? "Saving..." : "Save today's check-in"}
+					</button>
+				</form>
+	);
+}
+
+function TodayMotivation({
+	displayMonthKey,
+	selectedDateKey,
+	todayKey,
+	onSelectDate,
+	onChangeMonth
+}: {
+	displayMonthKey: string;
+	selectedDateKey: string;
+	todayKey: string;
+	onSelectDate: (dateKey: string) => void;
+	onChangeMonth: (monthOffset: number) => void;
+}) {
+	const calendarDays = useMemo(
+		() => getCalendarDays(displayMonthKey, todayKey),
+		[displayMonthKey, todayKey]
+	);
+	const calendarBlanks = useMemo(
+		() => getCalendarLeadingBlanks(displayMonthKey),
+		[displayMonthKey]
+	);
+
+	return (
+				<aside className="side-stack" aria-label="Today motivation">
+					<section className="pixel-card" aria-labelledby="calendar-title">
+						<div className="calendar-heading">
+							<button
+								type="button"
+								aria-label="Previous month"
+								onClick={() => onChangeMonth(-1)}
+							>
+								<ChevronLeft aria-hidden="true" size={18} />
+							</button>
+							<h3 id="calendar-title">{formatMonthYear(displayMonthKey)}</h3>
+							<button
+								type="button"
+								aria-label="Next month"
+								onClick={() => onChangeMonth(1)}
+							>
+								<ChevronRight aria-hidden="true" size={18} />
+							</button>
+						</div>
+						<div className="weekday-row" aria-hidden="true">
+							{weekdays.map((day) => (
+								<span key={day}>{day}</span>
+							))}
+						</div>
+						<div className="calendar-grid numbered-calendar" aria-label="Calendar preview">
+							{Array.from({ length: calendarBlanks }, (_, index) => (
+								<span key={`blank-${index}`} className="calendar-day spacer" />
+							))}
+							{calendarDays.map((day) => (
+								<button
+									type="button"
+									key={day.key}
+									className={`calendar-day neutral ${day.isToday ? "today" : ""} ${
+										day.isFuture ? "future" : ""
+									} ${day.key === selectedDateKey ? "selected" : ""}`}
+									aria-label={`${day.key}${day.isToday ? ", today" : ""}`}
+									aria-current={day.key === selectedDateKey ? "date" : undefined}
+									disabled={day.isFuture}
+									onClick={() => onSelectDate(day.key)}
+								>
+									{day.dayNumber}
+								</button>
+							))}
+						</div>
+						<p className="mini-note">
+							Real completion colors arrive after daily persistence is stable.
+						</p>
+					</section>
+
+					<section className="pixel-card" aria-labelledby="streaks-title">
+						<p className="eyebrow">Tiny cheers</p>
+						<h3 id="streaks-title">Current streaks</h3>
+						<div className="streak-list">
+							{streakShells.map((label) => {
+								const Icon = streakIcons[label];
+
+								return (
+									<div className="streak-card placeholder-streak" key={label}>
+										<span className="streak-icon" aria-hidden="true">
+											<Icon size={18} />
+										</span>
+										<span>{label}</span>
+										<small>Coming soon</small>
+									</div>
+								);
+							})}
+						</div>
+					</section>
+				</aside>
+	);
+}
+
+export function TodayPage() {
+	const { isConfigured } = useAuth();
+	const todayKey = toLocalDateKey();
+	const [dateKey, setDateKey] = useState(() => todayKey);
+	const [displayMonthKey, setDisplayMonthKey] = useState(() => toMonthKey(todayKey));
+	const { profile, today, saveDailyEntry, setChecklistCompletion } = useV05Today(dateKey);
+	const isLoading = profile.isLoading || today.isLoading;
+	const hasLoadError = Boolean(profile.error || today.error);
+	const hasEntry = Boolean(today.data?.dailyEntry);
+	const formKey = [
+		dateKey,
+		today.data?.dailyEntry?.id ?? "new",
+		today.data?.dailyEntry?.updated_at ?? "empty",
+		...(today.data?.checklistCompletions ?? []).map(
+			(completion) =>
+				`${completion.item_key}:${completion.completed}:${completion.updated_at ?? ""}`
+		)
+	].join("|");
+
+	function handleActiveDateChange(nextDateKey: string) {
+		setDateKey(nextDateKey);
+		setDisplayMonthKey(toMonthKey(nextDateKey));
+	}
+
+	return (
+		<section className="v05-screen today-screen" aria-labelledby="today-title">
+			<div className="surface-header today-header">
+				<div>
+					<p className="eyebrow">Daily quest board</p>
+					<h2 id="today-title">Today</h2>
+				</div>
+				<label className="date-pill">
+					<span>Entry date</span>
+					<input
+						type="date"
+						value={dateKey}
+						max={todayKey}
+						onChange={(event) => handleActiveDateChange(event.target.value)}
+					/>
+				</label>
+			</div>
+
+			<div className="today-layout">
+				<TodayCheckIn
+					key={formKey}
+					dateKey={dateKey}
+					isConfigured={isConfigured}
+					isLoading={isLoading}
+					hasLoadError={hasLoadError}
+					hasEntry={hasEntry}
+					todayData={today.data}
+					saveDailyEntry={saveDailyEntry}
+					setChecklistCompletion={setChecklistCompletion}
+				/>
+				<TodayMotivation
+					displayMonthKey={displayMonthKey}
+					selectedDateKey={dateKey}
+					todayKey={todayKey}
+					onSelectDate={handleActiveDateChange}
+					onChangeMonth={(monthOffset) =>
+						setDisplayMonthKey((current) => addCalendarMonths(current, monthOffset))
+					}
+				/>
+			</div>
+		</section>
+	);
+}

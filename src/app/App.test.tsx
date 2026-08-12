@@ -42,21 +42,19 @@ describe("App foundation", () => {
 		expect(
 			screen.getByRole("heading", { name: "Sola Glow-Up" })
 		).toBeInTheDocument();
-		expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+		expect(screen.getAllByRole("navigation", { name: "Primary" })[0]).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Daily check-in" })).toBeInTheDocument();
-		expect(
-			screen.getByRole("heading", { name: "Completion calendar" })
-		).toBeInTheDocument();
+		expect(screen.getByText("Checklist")).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Current streaks" })).toBeInTheDocument();
 	});
 
 	it("exposes only the active V0.5 destinations", () => {
 		renderApp("/today");
 
-		expect(screen.getByRole("link", { name: "Today" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "History" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Progress" })).toBeInTheDocument();
+		expect(screen.getAllByRole("link", { name: "Today" })).toHaveLength(2);
+		expect(screen.getAllByRole("link", { name: "History" })).toHaveLength(2);
+		expect(screen.getAllByRole("link", { name: "Progress" })).toHaveLength(2);
 		expect(screen.queryByRole("link", { name: "Glow Up" })).not.toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: "Food" })).not.toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: "Fitness" })).not.toBeInTheDocument();

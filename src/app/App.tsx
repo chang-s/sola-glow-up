@@ -2,13 +2,14 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { AuthRoute } from "../features/auth/AuthRoute";
 import { LoginPage } from "../features/auth/LoginPage";
+import { TodayPage } from "../features/v05/TodayPage";
 import { routeSections } from "./routeConfig";
-import { HistoryShell, ProgressShell, TodayShell } from "./routes";
+import { HistoryShell, ProgressShell } from "./routes";
 
 function getRouteElement(path: string) {
 	if (path === "history") return <HistoryShell />;
 	if (path === "progress") return <ProgressShell />;
-	return <TodayShell />;
+	return <TodayPage />;
 }
 
 export function App() {

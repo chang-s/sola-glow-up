@@ -3,6 +3,19 @@ import { Sparkles } from "lucide-react";
 import { routeSections } from "./routeConfig";
 import { useAuth } from "../features/auth/useAuth";
 
+function PrimaryNav({ className }: { className: string }) {
+	return (
+		<nav className={className} aria-label="Primary">
+			{routeSections.map(({ path, label, Icon }) => (
+				<NavLink key={path} to={`/${path}`} className="nav-item">
+					<Icon aria-hidden="true" size={20} />
+					<span>{label}</span>
+				</NavLink>
+			))}
+		</nav>
+	);
+}
+
 export function AppShell() {
 	const { signOut, user, isConfigured } = useAuth();
 
@@ -31,18 +44,12 @@ export function AppShell() {
 			</header>
 
 			<div className="layout">
-				<nav className="primary-nav" aria-label="Primary">
-					{routeSections.map(({ path, label, Icon }) => (
-						<NavLink key={path} to={`/${path}`} className="nav-item">
-							<Icon aria-hidden="true" size={20} />
-							<span>{label}</span>
-						</NavLink>
-					))}
-				</nav>
+				<PrimaryNav className="primary-nav desktop-nav" />
 				<main className="main-panel">
 					<Outlet />
 				</main>
 			</div>
+			<PrimaryNav className="mobile-bottom-nav" />
 		</div>
 	);
 }

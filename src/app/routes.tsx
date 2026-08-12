@@ -171,10 +171,14 @@ export function ProgressShell() {
 						<TrendingDown aria-hidden="true" size={22} />
 					</div>
 					<div className="chart-placeholder" aria-hidden="true">
-						<span />
-						<span />
-						<span />
-						<span />
+						<svg viewBox="0 0 320 140" role="img" aria-label="Line graph placeholder">
+							<polyline points="16,98 92,84 168,88 238,58 304,46" />
+							<circle cx="16" cy="98" r="6" />
+							<circle cx="92" cy="84" r="6" />
+							<circle cx="168" cy="88" r="6" />
+							<circle cx="238" cy="58" r="6" />
+							<circle cx="304" cy="46" r="6" />
+						</svg>
 					</div>
 					<p className="empty-note">
 						The real graph appears here after V0.5 daily entries are connected.
