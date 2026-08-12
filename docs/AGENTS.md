@@ -5,14 +5,17 @@ This project is intended to be continued by Codex/ChatGPT Work across many sessi
 ## Required Reading Order
 
 1. `PROJECT.md`
-2. `docs/PRD.md`
+2. `docs/V0.5.md`
 3. `DECISIONS.md`
 4. `ROADMAP.md`
 5. `ARCHITECTURE.md`
 6. `DATABASE.md`
-7. Relevant source files once implementation exists
+7. `docs/PRD.md`
+8. Relevant source files once implementation exists
 
 If these documents materially contradict each other, stop and ask Sola before proceeding.
+
+For active implementation, `docs/V0.5.md` overrides older V1 roadmap and PRD language. The larger V1 PRD is deferred context unless Sola explicitly asks to resume V1 work.
 
 ## Active Autonomy Level
 
@@ -120,6 +123,8 @@ When stopping, explain:
 5. Identify whether any STOP condition or approval-required action applies.
 6. If safe, proceed with the narrow approved scope.
 
+During the V0.5 pivot, verify that proposed work serves Today, History, or Progress. Treat requests to build deferred V1 features as requiring explicit Sola approval.
+
 ## Completing a Task
 
 Before reporting completion:
@@ -132,7 +137,21 @@ Before reporting completion:
 
 ## Testing Requirements
 
-Use automated tests for critical calculations and data transformations, especially:
+Use automated tests for critical calculations and data transformations.
+
+For V0.5, prioritize tests for:
+
+- Every-other-day checklist due logic.
+- Every-other-day streaks counting due dates rather than calendar days.
+- Monthly completion percentage derivation using only due checklist items.
+- Calendar distinction between tracking-expected/no-activity, pre-tracking dates, and future dates.
+- One-row-per-day save/update behavior.
+- Food photo metadata and storage-path handling.
+- Weight progress data transforms.
+- Date handling for History editing.
+- Authenticated data ownership boundaries where practical.
+
+For deferred V1, important test areas include:
 
 - Habit schedule expansion.
 - Glow Score.
@@ -195,6 +214,8 @@ Do not perform unrelated cleanup while completing a scoped task unless it is nec
 
 Do not silently change product requirements. If implementation reveals a product-level change is necessary, propose a decision and ask Sola.
 
+V0.5 must stay deliberately small. Do not rebuild the V1 universal habit/routine system under different names. Do not expose broad V1 navigation, user-facing builders, Glow Score, advanced analytics, AI integrations, achievements, XP, levels, currency, rewards, badges, challenges, social comparison, leaderboards, configurable streak engines, generalized goal-building systems, or calendar systems beyond the small V0.5 monthly completion calendar unless Sola explicitly approves that scope.
+
 ## Git Behavior
 
 The project has a local Git repository initialized on the `main` branch.
@@ -212,6 +233,9 @@ The project has a local Git repository initialized on the `main` branch.
 - Do not apply remote migrations without approval at Level 1.
 - Destructive migrations are a permanent STOP condition.
 - RLS/security policy changes require approval when they carry meaningful exposure risk.
+- The existing V1 habit/routine tables are dormant but preserved. Do not drop, reset, rewrite, or migrate away from them during V0.5.
+- The V0.5 table and bucket names are approved in documentation, but no migration or Supabase change may begin until Sola explicitly starts implementation/migration work.
+- Approved V0.5 route strategy: expose only Today, History, and Progress in active navigation/routing while preserving dormant V1 code.
 
 ## Secret Handling
 

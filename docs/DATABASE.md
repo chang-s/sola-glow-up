@@ -4,6 +4,10 @@
 
 This document describes the intended Supabase/Postgres architecture and current migration state. It should evolve alongside implementation and migrations.
 
+**ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker.
+
+No V0.5 migration has been created or applied yet. The V0.5 table and bucket names below are approved for implementation planning, but migration work must wait for Sola's explicit instruction.
+
 Current migration state:
 
 - Local migration foundation exists at `supabase/migrations/0001_app_foundation.sql`.
@@ -13,6 +17,7 @@ Current migration state:
 - Remote migration history records `0003_habits_and_routines.sql` as applied.
 - Milestone 1 adds universal habit and routine tables in `supabase/migrations/0003_habits_and_routines.sql`.
 - Goals/sprints remain deferred because the Goals model is provisional until Milestone 3 refinement.
+- The V1 habit/routine tables are dormant for active V0.5 work. Do not drop, reset, rewrite, or migrate away from them.
 
 ## Design Principles
 
@@ -23,8 +28,174 @@ Current migration state:
 - Use soft deletion/archive strategies for user-created data where accidental loss matters.
 - Persist weekly and monthly report snapshots.
 - Every tracked metric has exactly one canonical source of truth. Views should read from canonical records instead of creating duplicate editable values.
+- For V0.5, prefer a deliberately small dedicated model over forcing the simplified tracker through the V1 universal habit/routine schema.
+
+## Approved V0.5 Tables
+
+These table names are approved. Do not create or apply a migration until Sola explicitly starts implementation/migration work.
+
+### `v05_daily_entries`
+
+One row per profile and local calendar date.
+
+- `id` uuid primary key
+- `user_id` references `profiles.id`
+- `entry_date` date
+- `weight` numeric nullable
+- `steps` integer nullable
+- `sleep_duration_minutes` integer nullable
+- `bedtime` time nullable
+- `wake_time` time nullable
+- `previous_day_calories` integer nullable
+- `worked_out` boolean not null default false
+- `workout_activity_type` text nullable
+- `workout_duration_minutes` integer nullable
+- `notes` text nullable
+- `created_at` timestamptz
+- `updated_at` timestamptz
+- unique `(user_id, entry_date)`
+
+Purpose:
+Own the editable V0.5 daily scalar fields. Today and History update the same row for a date rather than creating duplicate daily records. Progress derives weight data from this table.
+
+This table also supplies data-based streak inputs, such as sleep duration and steps. Streak counts should be derived from rows in this table rather than stored as independent counters.
+
+### `v05_checklist_completions`
+
+One row per profile, date, and fixed checklist item key.
+
+- `id` uuid primary key
+- `user_id` references `profiles.id`
+- `entry_date` date
+- `item_key` text
+- `completed` boolean not null default false
+- `created_at` timestamptz
+- `updated_at` timestamptz
+- unique `(user_id, entry_date, item_key)`
+
+Purpose:
+Store completion state for the fixed V0.5 checklist. Checklist item definitions remain in code or static configuration for V0.5. Do not introduce a user-facing habit/schedule builder.
+
+Due-ness is not stored here. The application determines whether an item was due on a date from fixed checklist definitions and then joins against this table to determine completion.
+
+Approved fixed checklist definitions:
+
+| Key | Label | Cadence | Anchor date |
+| --- | --- | --- | --- |
+| `morning_skincare` | Morning Skincare | daily | |
+| `evening_skincare` | Evening Skincare | daily | |
+| `vitamins` | Vitamins | daily | |
+| `minoxidil` | Minoxidil | daily | |
+| `workout` | Worked Out | daily | |
+| `iron` | Iron | every_other_day | `2026-08-12` |
+| `irestore_helmet` | iRestore Helmet | every_other_day | `2026-08-12` |
+| `irestore_mask` | iRestore Mask | every_other_day | `2026-08-12` |
+
+Item keys are stable historical identifiers. Display labels may change without changing keys.
+
+### `v05_food_photos`
+
+One row per uploaded food photo.
+
+- `id` uuid primary key
+- `user_id` references `profiles.id`
+- `entry_date` date
+- `storage_path` text
+- `meal_type` text nullable
+- `note` text nullable
+- `created_at` timestamptz
+- `updated_at` timestamptz
+- `deleted_at` timestamptz nullable
+
+Purpose:
+Support Today food photo uploads and the History scrapbook gallery. Food photos should be stored in the approved private Supabase Storage bucket `v05-food-photos`.
+
+### V0.5 RLS And Storage Direction
+
+V0.5 tables should use owner-only RLS following the existing `profiles` ownership pattern. Authenticated users may read, insert, and update only their own rows. Normal V0.5 UI should not permanently delete photo storage objects.
+
+Storage paths should include an owner/profile prefix to make private bucket policies straightforward.
+
+### V0.5 Recurrence Storage Boundary
+
+V0.5 does not need a recurrence table. Fixed checklist item definitions can live in code/static configuration with:
+
+- `key`
+- `label`
+- `cadence`: `daily` or `every_other_day`
+- `anchor_date` for every-other-day items
+- optional display metadata
+
+Every-other-day due dates are derived by counting whole calendar days between `entry_date` and `anchor_date`; an item is due when that difference is divisible by 2. Dates before the anchor are not due unless explicitly configured otherwise.
+
+Approved every-other-day anchor:
+
+- `iron`, `irestore_helmet`, and `irestore_mask` all use `2026-08-12`.
+- They are due August 12, August 14, August 16, August 18, and so on.
+- They are not due August 13, August 15, August 17, and so on.
+
+### V0.5 Monthly Calendar And Streak Derivation
+
+V0.5 does not need tables for monthly completion percentages, streak counters, achievements, badges, or goals.
+
+Monthly completion calendar state is derived from:
+
+- Fixed checklist definitions.
+- `v05_checklist_completions`.
+- The tracking start boundary.
+- The current date.
+
+Tracking begins on the date of the user's first saved V0.5 daily entry. Dates before that first saved entry are neutral and must not count as failed, 0% completion, streak breaks, or reduced completion statistics.
+
+For each date:
+
+- Future dates are disabled/neutral and do not count as failure.
+- Dates before tracking began are inactive/neutral.
+- Dates on or after tracking began use only checklist items due on that date as the denominator.
+- Completion percentage is completed due items divided by due items.
+- 80-100% is Great, 50-79% is Good, 1-49% is Some progress, and 0% is No activity.
+
+If no checklist items were due, the date should be neutral rather than failed.
+
+A saved daily entry with zero completed due checklist items can legitimately represent a 0% / No activity checklist day.
+
+Streaks are derived from canonical records:
+
+- Checklist streaks use fixed checklist definitions plus `v05_checklist_completions`.
+- Daily checklist item streaks count consecutive successful calendar days.
+- Every-other-day checklist item streaks count consecutive successful due dates, not consecutive calendar days.
+- Data-based streaks use `v05_daily_entries` and fixed/configured thresholds, such as 7+ hours of sleep or a step target.
+
+Approved initial displayed streaks:
+
+- Workout.
+- 7+ hours of sleep.
+- 7,500+ steps.
+- Vitamins.
+
+Approved initial thresholds:
+
+- Sleep goal: `sleep_duration_minutes >= 420`.
+- Step goal: `steps >= 7500`.
+
+Do not store a separate value such as `workout_streak = 6` in the initial V0.5 schema. Historical edits should naturally update derived calendar and streak results.
+
+## Dormant V1 Tables
+
+The following tables already exist remotely and remain preserved for deferred V1 work:
+
+- `habits`
+- `habit_schedules`
+- `habit_entries`
+- `routine_groups`
+- `routine_steps`
+- `routine_step_entries`
+
+Do not destructively alter these tables as part of V0.5.
 
 ## Proposed Tables
+
+The tables below describe the larger deferred V1 architecture. They are not the active V0.5 schema unless explicitly re-approved.
 
 ### Identity
 

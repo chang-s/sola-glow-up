@@ -2,7 +2,11 @@
 
 ## Status
 
-This document describes the approved architecture and Milestone 0 foundation. It should evolve alongside the code, but product-level changes must be proposed in `DECISIONS.md` and approved before changing the PRD.
+This document describes the approved architecture and current V0.5 pivot direction. It should evolve alongside the code, but product-level changes must be proposed in `DECISIONS.md` and approved before changing the PRD.
+
+**ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker.
+
+The larger V1/Milestone 1 habit and routine system is preserved and deferred. V1 architecture remains useful long-term context, but it must not drive active implementation unless Sola explicitly resumes V1 work.
 
 ## Technology Stack
 
@@ -24,6 +28,17 @@ Milestone 0 uses `pnpm` as the package manager and pins TypeScript to `6.0.0-bet
 
 ## Application Modules
 
+### Active V0.5 Modules
+
+- `today`: the main daily check-in with a fixed checklist, daily fields, basic workout detail, food photo upload, monthly completion calendar, and current streaks.
+- `history`: previous daily entries and scrapbook-style food gallery.
+- `progress`: starting/current/latest weight, total change, and weight-over-time graph.
+- `auth`: existing Supabase email/password sign-in foundation.
+
+V0.5 should not expose broad V1 navigation. Active navigation should be limited to Today, History, and Progress.
+
+### Deferred V1 Modules
+
 - `today`: daily command center, routines, scheduled habits, quick logging, Glow Score.
 - `habits`: universal habit definitions, schedules, entries, streaks, adherence.
 - `body`: weight, measurements, milestones, progress photos.
@@ -37,9 +52,16 @@ Milestone 0 uses `pnpm` as the package manager and pins TypeScript to `6.0.0-bet
 
 ## Routing
 
-Planned primary routes:
+Active V0.5 primary routes:
 
 - `/today`
+- `/history`
+- `/progress`
+
+During V0.5 implementation, dormant V1 screens should be removed from the active V0.5 navigation and routing surface without destructively deleting the underlying V1 implementation code.
+
+Deferred V1 primary routes:
+
 - `/glow-up`
 - `/food`
 - `/fitness`
@@ -49,9 +71,9 @@ Planned primary routes:
 - `/calendar`
 - `/settings`
 
-Use compact modals, drawers, or mobile sheets for quick creation/editing where that keeps logging fast. Shared editing flows should be reusable between Today, Calendar, and domain screens.
+Use compact inline editing, modals, drawers, or mobile sheets only where they make the small V0.5 tracker faster. Do not introduce V1 management surfaces such as universal habit settings, broad domain pages, or a calendar system during V0.5.
 
-Milestone 0 implements placeholder routes only. Later milestones own actual feature screens.
+The approved V0.5 strategy is to expose only Today, History, and Progress as active product navigation while preserving dormant V1 code for possible future reuse.
 
 ## State Management
 
@@ -61,9 +83,13 @@ Use local component state for transient UI concerns such as open sheets, selecte
 
 Add a small app-level store only if repeated cross-route UI state becomes painful. Do not create one large global health-data store.
 
+For V0.5, prefer the smallest useful state model: React local state for forms and TanStack Query for authenticated Supabase daily entries/checklist completions/food photos. Avoid generalized stores or speculative abstractions.
+
 ## Data Access
 
 Wrap Supabase access behind feature-oriented data modules rather than scattering raw queries through UI components. Calculation utilities should be pure and separately tested.
+
+For V0.5, create a small dedicated data module after schema approval. Do not force V0.5 through the V1 universal habit/routine schema. The V1 tables can remain dormant while V0.5 uses direct daily-entry, checklist-completion, and food-photo records.
 
 Important calculation boundaries:
 
@@ -81,9 +107,25 @@ Habit schedule expansion must remain intentionally simple in V1. Supported sched
 
 Do not build a Google Calendar-style recurrence engine for V1.
 
+For V0.5 recurrence, support only `daily` and `every_other_day` fixed checklist definitions. Every-other-day due dates should be calculated from an explicit anchor date. Do not implement arbitrary user-facing recurrence.
+
+For V0.5 calendar and streaks, derive visual states and counts from canonical daily/checklist data rather than storing independent counters. Every-other-day item streaks count consecutive successful due dates, not calendar days.
+
+Approved V0.5 configuration constants:
+
+- Daily checklist keys: `morning_skincare`, `evening_skincare`, `vitamins`, `minoxidil`, `workout`.
+- Every-other-day checklist keys: `iron`, `irestore_helmet`, `irestore_mask`.
+- Every-other-day anchor date: `2026-08-12`.
+- Initial displayed streaks: Workout, 7+ hours of sleep, 7,500+ steps, Vitamins.
+- Initial sleep threshold: 7 or more hours.
+- Initial step threshold: 7,500 or more steps.
+- Tracking starts on the first saved V0.5 daily entry.
+
 ## Authentication
 
 V1 uses email/password authentication only.
+
+V0.5 keeps the existing Supabase email/password authentication foundation so phone and desktop use the same private authenticated records.
 
 Do not add OAuth or magic-link authentication unless requested later.
 
@@ -99,11 +141,13 @@ Use private Supabase Storage buckets for:
 - Progress photos
 - Product images if needed
 
+For V0.5, the active storage need is food photos only. The approved private bucket name is `v05-food-photos`. Do not create or apply storage changes until Sola explicitly starts implementation/migration work.
+
 Photo database records store owner, storage path, date, label/type, related entity, and deletion state. Normal delete interactions should soft-delete records first. Permanent storage deletion is explicit and never automatic.
 
 ## PWA Approach
 
-V1 is online-first. Use PWA behavior for installability and appropriate asset/app-shell caching.
+V0.5 and V1 are online-first. Use PWA behavior for installability and appropriate asset/app-shell caching.
 
 Do not implement full offline database synchronization, conflict resolution, or queued offline writes in V1.
 
@@ -136,6 +180,24 @@ Desktop priorities:
 - Efficient historical editing
 
 Status and completion state must not rely solely on color.
+
+## V0.5 Visual Presentation
+
+V0.5 should feel like a tiny cozy pixel game wrapped around real web UI. The attached pixel-art references are visual direction only and must not be reproduced, traced, or treated as project assets.
+
+Use metaphors such as:
+
+- Today as a pixel clipboard, daily quest board, paper sheet, or notebook.
+- Monthly completion calendar as a pixel calendar, tracker sheet, wall calendar, or game-status board.
+- Streaks as small motivational status cards or signs.
+- History as a pixel notebook or scrapbook.
+- Progress as a graph-paper panel or pixel chart board.
+
+Avoid conventional SaaS dashboards, clinical health-tracker styling, generic wellness-app treatment, glassmorphism, huge gradient cards, and sterile white dashboard layouts.
+
+The functional controls must remain real accessible web UI: real inputs, buttons, checkboxes, uploaded photos, and a real data-driven chart. Pixel art and decorative elements should frame the experience rather than replacing important data or controls.
+
+Calendar and streak feedback should feel charming and encouraging without turning V0.5 into a full gamification system. Do not introduce achievements, XP, levels, currency, rewards, badges, challenges, social comparison, leaderboards, configurable streak engines, or generalized goal-building systems.
 
 ## Universal Habits, Routines, and Specialized Domains
 

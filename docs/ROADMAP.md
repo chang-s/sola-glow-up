@@ -10,12 +10,143 @@
 
 ## Current Roadmap State
 
-**Current Phase:** Milestone 1 - Universal Habits and Routines
-**Current Status:** READY FOR REVIEW
+**ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker
+**Current Phase:** V0.5.0 - Foundation / Pivot
+**Current Status:** V0.5 PRODUCT SPEC APPROVED; IMPLEMENTATION NOT STARTED
 **Active Autonomy Level:** Level 2 - Trusted Development
-**Next Approved Task:** Await Sola review of Milestone 1 UX revisions; do not begin Milestone 2.
+**Next Approved Task:** Wait for Sola's explicit instruction before beginning V0.5 implementation.
 
 Agents should never guess what to work on when `Next Approved Task` exists.
+
+V1/Milestone 1 work is preserved in Git and on remote branch `backup/pre-v0.5`, but the active roadmap is now V0.5. V1 features must not be implemented unless Sola explicitly requests them.
+
+## V0.5 Roadmap
+
+Roadmap philosophy:
+
+- Put a genuinely usable tracker in Sola's hands as early as possible.
+- Keep the product small, reliable, and cute.
+- Reuse foundation infrastructure.
+- Do not rebuild the V1 universal habit/routine system under a new name.
+- Treat monthly completion calendar and streaks as derived V0.5 motivation, not a gamification platform.
+- Preserve V1 code and migrations as dormant infrastructure.
+
+### V0.5.0 - Foundation / Pivot
+
+**Status:** COMPLETE
+
+Objective:
+Prepare the simplified three-screen product direction and V0.5 data model.
+
+Tasks:
+
+- [x] Preserve the pre-pivot V1 state in remote branch `backup/pre-v0.5`.
+- [x] Document the active V0.5 product source of truth in `docs/V0.5.md`.
+- [x] Review and approve the V0.5 schema/table/bucket names before implementation.
+- [x] Reduce the active product plan to Today, History, and Progress.
+- [x] Document the approved strategy to remove dormant V1 screens from active V0.5 navigation/routing while preserving V1 code.
+- [x] Approve fixed checklist keys, every-other-day anchor date, tracking-start semantics, and initial streak thresholds.
+
+Acceptance Criteria:
+
+- Future sessions can clearly identify V0.5 as the active target.
+- V1 is clearly marked as deferred, not cancelled.
+- No code or database migrations are changed during the documentation pivot.
+- V0.5 implementation still requires Sola's explicit instruction.
+
+### V0.5.1 - Usable Today
+
+**Status:** NOT STARTED
+
+Objective:
+Make the app usable for real daily logging.
+
+Tasks:
+
+- Implement the Today screen as the main daily check-in.
+- Save and reload daily scalar fields from authenticated Supabase data.
+- Implement a small fixed checklist.
+- Implement simple daily and every-other-day due logic.
+- Let Worked out reveal activity type and duration fields.
+- Add a small monthly completion calendar derived from due checklist completions.
+- Add a small current-streaks panel derived from checklist and daily data.
+- Ensure edits update the same daily record rather than creating duplicates.
+
+Acceptance Criteria:
+
+- Sola can sign in and log today's checklist/data from desktop or phone.
+- Reopening the app shows the saved data for the same authenticated user.
+- Not-due checklist items do not appear as incomplete for that day.
+- The monthly calendar distinguishes Great, Good, Some progress, No activity, future dates, and dates before tracking began.
+- Streaks count consecutive successful due dates for every-other-day checklist items.
+
+### V0.5.2 - History And Food Gallery
+
+**Status:** NOT STARTED
+
+Objective:
+Let Sola look backward, edit previous days, and browse food photos.
+
+Tasks:
+
+- Browse previous daily entries.
+- Open a day and edit its checklist/data.
+- Upload one or more food photos for a day.
+- Store food photos privately in Supabase Storage.
+- Add meal type and note metadata.
+- Build a scrapbook-style grid of clickable food photo cards.
+
+Acceptance Criteria:
+
+- Previous days are viewable and editable.
+- Food photos display in a cute visual gallery.
+- Clicking a photo shows the larger image and associated date/meal/note metadata.
+
+### V0.5.3 - Progress
+
+**Status:** NOT STARTED
+
+Objective:
+Show small, useful weight progress without becoming a full analytics product.
+
+Tasks:
+
+- Show starting weight.
+- Show current/latest weight.
+- Show total weight change.
+- Show a weight-over-time graph.
+- Optionally add only trivial summaries from existing V0.5 data.
+
+Acceptance Criteria:
+
+- Weight progress is understandable at a glance.
+- The chart is data-driven and responsive.
+- No advanced analytics, Glow Score, or full reporting system is added.
+
+### V0.5.4 - Pixel Polish
+
+**Status:** NOT STARTED
+
+Objective:
+Progressively strengthen the cozy pixel-game presentation around the simple tracker.
+
+Tasks:
+
+- Refine Today as a pixel clipboard or quest board.
+- Refine History as a pixel notebook or scrapbook.
+- Refine Progress as a chart board or graph-paper panel.
+- Add small mascot/static pose presentation if useful.
+- Improve mobile and desktop polish.
+
+Acceptance Criteria:
+
+- The app feels cute, cozy, and personal without sacrificing real accessible controls.
+- Pixel presentation decorates and frames the UI rather than replacing functional inputs.
+- No game engine, player movement, or elaborate animation system is introduced.
+
+## Deferred V1 Roadmap
+
+The following V1 roadmap remains useful long-term context but is not active development scope.
 
 ## Milestone 0 - Project Foundation
 

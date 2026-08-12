@@ -5,6 +5,16 @@
 **Platforms:** Responsive Progressive Web App (Windows + Android)\
 **Primary user:** Sola
 
+## Current Implementation Status
+
+**ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker.
+
+**Current Status:** V0.5 product specification approved; implementation not started.
+
+The larger V1 product vision in this PRD is deferred, not cancelled. For active work, use `docs/V0.5.md` as the source of truth. Do not implement V1 features from this PRD unless Sola explicitly asks to resume V1 work.
+
+The pre-pivot V1/Milestone 1 implementation is preserved in Git and on remote branch `backup/pre-v0.5`.
+
 ## 1. Executive Summary
 
 Sola Glow-Up is a private personal tracking application for health, body

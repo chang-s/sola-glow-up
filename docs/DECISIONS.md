@@ -2,6 +2,60 @@
 
 Future agents should append decisions to this log rather than silently rewriting historical decisions. Product-level changes should be proposed here and approved before the PRD is changed.
 
+## 2026-08-11 - Pivot Active Development Target To V0.5
+
+Decision:
+Pivot active Sola Glow-Up development from the larger V1/Milestone 1 universal habits and routines system to a deliberately small V0.5 daily personal tracker.
+
+Rationale:
+Sola wants something simple enough to begin using every day as soon as possible. V0.5 should behave like a cute, game-like spreadsheet: check things off, enter a few numbers, upload food photos, browse history, and see weight progress.
+
+Consequences:
+`docs/V0.5.md` is now the active product source of truth. The active app should have only Today, History, and Progress. Keep Supabase and existing authentication for cross-device data. Use the approved small dedicated V0.5 data model rather than forcing the simplified tracker through the V1 universal habit/routine schema. Do not create/apply V0.5 migrations until Sola explicitly starts implementation/migration work.
+
+V1 is deferred, not cancelled. The pre-pivot state is preserved in remote branch `backup/pre-v0.5`; existing V1 code, migrations, concepts, and remote tables must not be destructively removed merely because they are dormant.
+
+Deferred V1 functionality includes universal/custom habit builders, routine builders, arbitrary recurrence, archive/restore/reorder management, Glow Score, broad domain navigation, advanced food/nutrition systems, AI integrations, achievements/gamification systems, advanced analytics, calendar systems, and larger roadmap functionality.
+
+## 2026-08-11 - Add V0.5 Completion Calendar And Streaks
+
+Decision:
+Add a small monthly completion calendar and motivational current streaks to active V0.5 scope.
+
+Rationale:
+Calendar feedback and streaks create immediate motivation from the data V0.5 already collects without requiring a larger game system, goal builder, or V1 analytics stack.
+
+Consequences:
+Today now has three major pieces: daily clipboard/check-in, monthly completion calendar, and current streaks. Calendar completion is derived from due checklist items for each day. Streaks are derived from canonical checklist/daily records. Every-other-day checklist streaks count consecutive successful due dates rather than consecutive calendar days.
+
+Do not store independent streak counters or daily completion percentages in the initial V0.5 schema. Do not introduce achievements, XP, levels, currency, rewards, badges, challenges, social comparison, leaderboards, configurable streak engines, or generalized goal-building systems.
+
+## 2026-08-11 - Approve Final V0.5 Constants And Route Strategy
+
+Decision:
+Approve the final V0.5 planning decisions before implementation.
+
+Rationale:
+The remaining ambiguity needed to be closed so the first implementation pass can stay narrow and avoid re-opening V1 architecture.
+
+Consequences:
+Approved V0.5 table names are `v05_daily_entries`, `v05_checklist_completions`, and `v05_food_photos`. Approved private Storage bucket name is `v05-food-photos`.
+
+Approved fixed checklist definitions:
+
+- Daily: `morning_skincare`, `evening_skincare`, `vitamins`, `minoxidil`, `workout`.
+- Every other day: `iron`, `irestore_helmet`, `irestore_mask`.
+
+All every-other-day items use anchor date `2026-08-12` and are due August 12, August 14, August 16, August 18, and so on. They are not due August 13, August 15, August 17, and so on. Streaks for these items count consecutive successful due dates.
+
+V0.5 tracking starts on the first saved V0.5 daily entry. Earlier dates are neutral and must not count as failed, 0% completion, streak breaks, or reduced completion statistics. Future dates are neutral/disabled.
+
+Initial displayed streaks are Workout, 7+ hours of sleep, 7,500+ steps, and Vitamins. Initial thresholds are sleep duration of at least 7 hours and steps of at least 7,500. These remain constants/configuration, not a generalized Settings or Goals system.
+
+During V0.5 implementation, remove dormant V1 screens from active navigation/routing and expose only Today, History, and Progress. Preserve dormant V1 code and already-applied V1 database infrastructure for possible future reuse.
+
+Do not create migrations, apply migrations, modify Supabase, or begin implementation until Sola explicitly starts implementation work.
+
 ## 2026-08-11 - Milestone 1 Manual UX Review Revisions
 
 Decision:
