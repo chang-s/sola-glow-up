@@ -63,6 +63,14 @@ export type V05HistoryData = {
 	foodPhotos: V05FoodPhotoWithUrl[];
 };
 
+export type V05WeightEntry = Pick<V05DailyEntry, "entry_date" | "weight"> & {
+	weight: number;
+};
+
+export type V05ProgressData = {
+	weightEntries: V05WeightEntry[];
+};
+
 export type V05DailyEntryInput = {
 	weight: number | null;
 	steps: number | null;

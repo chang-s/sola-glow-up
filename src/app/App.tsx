@@ -3,13 +3,13 @@ import { AppShell } from "./AppShell";
 import { AuthRoute } from "../features/auth/AuthRoute";
 import { LoginPage } from "../features/auth/LoginPage";
 import { HistoryPage } from "../features/v05/HistoryPage";
+import { ProgressPage } from "../features/v05/ProgressPage";
 import { TodayPage } from "../features/v05/TodayPage";
 import { routeSections } from "./routeConfig";
-import { ProgressShell } from "./routes";
 
 function getRouteElement(path: string) {
 	if (path === "history") return <HistoryPage />;
-	if (path === "progress") return <ProgressShell />;
+	if (path === "progress") return <ProgressPage />;
 	return <TodayPage />;
 }
 

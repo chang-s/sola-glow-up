@@ -78,7 +78,7 @@ describe("App foundation", () => {
 		renderApp("/progress");
 
 		expect(screen.getByRole("heading", { name: "Progress" })).toBeInTheDocument();
-		expect(screen.getByRole("heading", { name: "Trend preview" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Weight trend" })).toBeInTheDocument();
 	});
 
 	it("redirects dormant V1 routes out of the active product surface", () => {

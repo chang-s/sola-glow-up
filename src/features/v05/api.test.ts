@@ -3,6 +3,7 @@ import {
 	deleteV05FoodPhoto,
 	loadV05FoodPhotos,
 	loadV05MotivationData,
+	loadV05ProgressData,
 	saveV05DailyEntry,
 	setV05ChecklistCompletion,
 	uploadV05FoodPhoto
@@ -35,6 +36,7 @@ function motivationRangeChain(data: unknown[]) {
 		select: vi.fn(() => chain),
 		eq: vi.fn(() => chain),
 		is: vi.fn(() => chain),
+		not: vi.fn(() => chain),
 		gte: vi.fn(() => chain),
 		lte: vi.fn(() => chain),
 		order: vi.fn(() => chain),
@@ -159,6 +161,26 @@ describe("V0.5 Supabase API", () => {
 		expect(dailyRangeChain.lte).toHaveBeenCalledWith("entry_date", "2026-08-31");
 		expect(checklistRangeChain.gte).toHaveBeenCalledWith("entry_date", "2026-08-01");
 		expect(checklistRangeChain.lte).toHaveBeenCalledWith("entry_date", "2026-08-31");
+	});
+
+	it("loads only recorded weights in chronological order for Progress", async () => {
+		const chain = motivationRangeChain([
+			{ entry_date: "2026-08-12", weight: 181.6 },
+			{ entry_date: "2026-08-15", weight: 179.8 }
+		]);
+		supabaseMock.from.mockReturnValue(chain);
+
+		const data = await loadV05ProgressData("profile-1");
+
+		expect(supabaseMock.from).toHaveBeenCalledWith("v05_daily_entries");
+		expect(chain.select).toHaveBeenCalledWith("entry_date, weight");
+		expect(chain.eq).toHaveBeenCalledWith("user_id", "profile-1");
+		expect(chain.not).toHaveBeenCalledWith("weight", "is", null);
+		expect(chain.order).toHaveBeenCalledWith("entry_date", { ascending: true });
+		expect(data.weightEntries).toEqual([
+			{ entry_date: "2026-08-12", weight: 181.6 },
+			{ entry_date: "2026-08-15", weight: 179.8 }
+		]);
 	});
 
 	it("loads active food photos newest-first with signed private URLs", async () => {

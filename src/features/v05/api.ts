@@ -9,6 +9,7 @@ import type {
 	V05FoodPhotoWithUrl,
 	V05HistoryData,
 	V05MotivationData,
+	V05ProgressData,
 	V05TodayData
 } from "./types";
 
@@ -208,6 +209,24 @@ export async function loadV05HistoryData(profileId: string): Promise<V05HistoryD
 		dailyEntries,
 		checklistCompletions,
 		foodPhotos: await loadV05FoodPhotos(profileId)
+	};
+}
+
+export async function loadV05ProgressData(profileId: string): Promise<V05ProgressData> {
+	const client = requireSupabase();
+
+	const result = await client
+		.from("v05_daily_entries")
+		.select("entry_date, weight")
+		.eq("user_id", profileId)
+		.not("weight", "is", null)
+		.order("entry_date", { ascending: true })
+		.returns<V05ProgressData["weightEntries"]>();
+
+	friendlyError(result.error);
+
+	return {
+		weightEntries: result.data ?? []
 	};
 }
 

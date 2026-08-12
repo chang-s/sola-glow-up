@@ -6,6 +6,7 @@ import {
 	loadV05FoodPhotos,
 	loadV05HistoryData,
 	loadV05MotivationData,
+	loadV05ProgressData,
 	loadV05TodayData,
 	saveV05DailyEntry,
 	setV05ChecklistCompletion,
@@ -70,6 +71,9 @@ export function useV05Today(dateKey: string, displayMonthKey: string, todayKey: 
 			});
 			void queryClient.invalidateQueries({
 				queryKey: ["v05-history", profile.data?.id]
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-progress", profile.data?.id]
 			});
 		}
 	});
@@ -147,4 +151,16 @@ export function useV05History() {
 	});
 
 	return { profile, history };
+}
+
+export function useV05Progress() {
+	const profile = useV05Profile();
+
+	const progress = useQuery({
+		queryKey: ["v05-progress", profile.data?.id],
+		enabled: Boolean(profile.data?.id),
+		queryFn: () => loadV05ProgressData(profile.data!.id)
+	});
+
+	return { profile, progress };
 }

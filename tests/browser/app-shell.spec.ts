@@ -180,5 +180,5 @@ test("supports V0.5 shell navigation without tracker data", async ({ page }) => 
 
 	await expect(page).toHaveURL(/\/progress$/);
 	await expect(page.getByRole("heading", { name: "Progress" })).toBeVisible();
-	await expect(page.getByRole("heading", { name: "Trend preview" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Weight trend" })).toBeVisible();
 });
