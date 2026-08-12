@@ -14,13 +14,13 @@ export function AppShell() {
 						<Sparkles size={26} strokeWidth={2.4} />
 					</div>
 					<div>
-						<p className="eyebrow">Private PWA foundation</p>
+						<p className="eyebrow">Daily tracker</p>
 						<h1>Sola Glow-Up</h1>
 					</div>
 				</div>
 				<div className="session-actions">
 					<span className="session-label">
-						{isConfigured && user ? user.email : "Supabase setup pending"}
+						{isConfigured && user ? user.email : "Private cozy log"}
 					</span>
 					{user ? (
 						<button type="button" className="text-button" onClick={signOut}>

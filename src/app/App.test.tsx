@@ -36,7 +36,7 @@ function renderApp(
 }
 
 describe("App foundation", () => {
-	it("renders the application shell when Supabase is not configured", () => {
+	it("renders the V0.5 Today shell when Supabase is not configured", () => {
 		renderApp();
 
 		expect(
@@ -44,21 +44,49 @@ describe("App foundation", () => {
 		).toBeInTheDocument();
 		expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Daily check-in" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Completion calendar" })
+		).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Current streaks" })).toBeInTheDocument();
 	});
 
-	it("exposes all primary milestone routes as placeholders", () => {
-		renderApp("/beauty");
+	it("exposes only the active V0.5 destinations", () => {
+		renderApp("/today");
 
 		expect(screen.getByRole("link", { name: "Today" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Glow Up" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Food" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Fitness" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Beauty" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Growth" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Insights" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Calendar" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
-		expect(screen.getByRole("heading", { name: "Beauty" })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "History" })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "Progress" })).toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Glow Up" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Food" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Fitness" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Beauty" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Growth" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Insights" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Calendar" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
+	});
+
+	it("renders the History shell", () => {
+		renderApp("/history");
+
+		expect(screen.getByRole("heading", { name: "History" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Daily entries" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Food gallery" })).toBeInTheDocument();
+	});
+
+	it("renders the Progress shell", () => {
+		renderApp("/progress");
+
+		expect(screen.getByRole("heading", { name: "Progress" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Trend preview" })).toBeInTheDocument();
+	});
+
+	it("redirects dormant V1 routes out of the active product surface", () => {
+		renderApp("/settings");
+
+		expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
+		expect(screen.queryByRole("heading", { name: "Settings" })).not.toBeInTheDocument();
 	});
 
 	it("redirects protected routes to login when Supabase is configured without a session", () => {

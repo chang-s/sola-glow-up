@@ -2,10 +2,14 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { AuthRoute } from "../features/auth/AuthRoute";
 import { LoginPage } from "../features/auth/LoginPage";
-import { SettingsPage } from "../features/habits/SettingsPage";
-import { TodayPage } from "../features/habits/TodayPage";
 import { routeSections } from "./routeConfig";
-import { PlaceholderPage } from "./routes";
+import { HistoryShell, ProgressShell, TodayShell } from "./routes";
+
+function getRouteElement(path: string) {
+	if (path === "history") return <HistoryShell />;
+	if (path === "progress") return <ProgressShell />;
+	return <TodayShell />;
+}
 
 export function App() {
 	return (
@@ -18,17 +22,10 @@ export function App() {
 						<Route
 							key={section.path}
 							path={section.path}
-							element={
-								section.path === "today" ? (
-									<TodayPage />
-								) : section.path === "settings" ? (
-									<SettingsPage />
-								) : (
-									<PlaceholderPage section={section} />
-								)
-							}
+							element={getRouteElement(section.path)}
 						/>
 					))}
+					<Route path="*" element={<Navigate to="/today" replace />} />
 				</Route>
 			</Route>
 			<Route path="*" element={<Navigate to="/today" replace />} />

@@ -46,12 +46,9 @@ export function LoginPage() {
 				<div className="pixel-sola large" aria-hidden="true">
 					<Sparkles size={34} strokeWidth={2.4} />
 				</div>
-				<p className="eyebrow">Private foundation</p>
+				<p className="eyebrow">Private daily tracker</p>
 				<h1 id="login-title">Sola Glow-Up</h1>
-				<p>
-					Sign in with the approved V1 email/password flow once Supabase is
-					configured.
-				</p>
+				<p>Sign in to your tiny cozy check-in space.</p>
 
 				{isConfigured ? (
 					<form className="login-form" onSubmit={handleSubmit}>
