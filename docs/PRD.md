@@ -9,7 +9,7 @@
 
 **ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker.
 
-**Current Status:** V0.5 product specification approved; implementation not started.
+**Current Status:** Functional V0.5 is complete through V0.5.3. V0.5.4 Pixel Polish is planning-only until Sola explicitly approves implementation.
 
 The larger V1 product vision in this PRD is deferred, not cancelled. For active work, use `docs/V0.5.md` as the source of truth. Do not implement V1 features from this PRD unless Sola explicitly asks to resume V1 work.
 

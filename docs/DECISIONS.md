@@ -2,6 +2,17 @@
 
 Future agents should append decisions to this log rather than silently rewriting historical decisions. Product-level changes should be proposed here and approved before the PRD is changed.
 
+## 2026-08-12 - Functional V0.5 Complete And Pixel Polish Planning
+
+Decision:
+Approve V0.5.3 as the completion of functional V0.5 and move the active target to V0.5.4 Pixel Polish planning only.
+
+Rationale:
+Sola now has the deliberately small daily tracker foundation: Today daily logging, completion calendar, streaks, History/Food scrapbook, and Progress weight trend. The next work should improve cozy pixel presentation without expanding feature complexity.
+
+Consequences:
+Functional V0.5 is complete through V0.5.3. V0.5.4 may plan visual polish for the clipboard, scrapbook, chart board, responsive refinement, and possible mascot/static pose direction. Do not implement Pixel Polish, add new art/assets, generate mascot artwork, deploy, or expand into new product features until Sola explicitly approves implementation.
+
 ## 2026-08-11 - Pivot Active Development Target To V0.5
 
 Decision:

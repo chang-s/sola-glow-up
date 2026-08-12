@@ -6,16 +6,17 @@ This project is intended to be continued by Codex/ChatGPT Work across many sessi
 
 1. `PROJECT.md`
 2. `docs/V0.5.md`
-3. `DECISIONS.md`
-4. `ROADMAP.md`
-5. `ARCHITECTURE.md`
-6. `DATABASE.md`
-7. `docs/PRD.md`
-8. Relevant source files once implementation exists
+3. `docs/V0.5.4.md` when working on Pixel Polish planning or implementation
+4. `DECISIONS.md`
+5. `ROADMAP.md`
+6. `ARCHITECTURE.md`
+7. `DATABASE.md`
+8. `docs/PRD.md`
+9. Relevant source files once implementation exists
 
 If these documents materially contradict each other, stop and ask Sola before proceeding.
 
-For active implementation, `docs/V0.5.md` overrides older V1 roadmap and PRD language. The larger V1 PRD is deferred context unless Sola explicitly asks to resume V1 work.
+For active implementation, `docs/V0.5.md` overrides older V1 roadmap and PRD language. Functional V0.5 is complete through V0.5.3; the larger V1 PRD is deferred context unless Sola explicitly asks to resume V1 work.
 
 ## Active Autonomy Level
 
@@ -123,7 +124,7 @@ When stopping, explain:
 5. Identify whether any STOP condition or approval-required action applies.
 6. If safe, proceed with the narrow approved scope.
 
-During the V0.5 pivot, verify that proposed work serves Today, History, or Progress. Treat requests to build deferred V1 features as requiring explicit Sola approval.
+During V0.5 work, verify that proposed work serves Today, History, or Progress. The next active work is V0.5.4 Pixel Polish planning only until Sola approves implementation. Treat requests to build deferred V1 features as requiring explicit Sola approval.
 
 ## Completing a Task
 
@@ -234,7 +235,7 @@ The project has a local Git repository initialized on the `main` branch.
 - Destructive migrations are a permanent STOP condition.
 - RLS/security policy changes require approval when they carry meaningful exposure risk.
 - The existing V1 habit/routine tables are dormant but preserved. Do not drop, reset, rewrite, or migrate away from them during V0.5.
-- The V0.5 table and bucket names are approved in documentation, but no migration or Supabase change may begin until Sola explicitly starts implementation/migration work.
+- The V0.5 table and bucket names are approved and implemented in `supabase/migrations/0004_v05_daily_tracker.sql`. Do not make further Supabase/schema changes unless explicitly approved.
 - Approved V0.5 route strategy: expose only Today, History, and Progress in active navigation/routing while preserving dormant V1 code.
 
 ## Secret Handling

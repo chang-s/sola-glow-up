@@ -11,10 +11,10 @@
 ## Current Roadmap State
 
 **ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker
-**Current Phase:** V0.5.0 - Foundation / Pivot
-**Current Status:** V0.5 PRODUCT SPEC APPROVED; IMPLEMENTATION NOT STARTED
+**Current Phase:** V0.5.4 - Pixel Polish
+**Current Status:** FUNCTIONAL V0.5 COMPLETE; PIXEL POLISH PLANNING ONLY
 **Active Autonomy Level:** Level 2 - Trusted Development
-**Next Approved Task:** Wait for Sola's explicit instruction before beginning V0.5 implementation.
+**Next Approved Task:** Plan V0.5.4 Pixel Polish. Do not implement Pixel Polish until Sola explicitly approves implementation.
 
 Agents should never guess what to work on when `Next Approved Task` exists.
 
@@ -56,21 +56,21 @@ Acceptance Criteria:
 
 ### V0.5.1 - Usable Today
 
-**Status:** NOT STARTED
+**Status:** COMPLETE
 
 Objective:
 Make the app usable for real daily logging.
 
 Tasks:
 
-- Implement the Today screen as the main daily check-in.
-- Save and reload daily scalar fields from authenticated Supabase data.
-- Implement a small fixed checklist.
-- Implement simple daily and every-other-day due logic.
-- Let Worked out reveal activity type and duration fields.
-- Add a small monthly completion calendar derived from due checklist completions.
-- Add a small current-streaks panel derived from checklist and daily data.
-- Ensure edits update the same daily record rather than creating duplicates.
+- [x] Implement the Today screen as the main daily check-in.
+- [x] Save and reload daily scalar fields from authenticated Supabase data.
+- [x] Implement a small fixed checklist.
+- [x] Implement simple daily and every-other-day due logic.
+- [x] Let Worked out reveal activity type and duration fields.
+- [x] Add a small monthly completion calendar derived from due checklist completions.
+- [x] Add a small current-streaks panel derived from checklist and daily data.
+- [x] Ensure edits update the same daily record rather than creating duplicates.
 
 Acceptance Criteria:
 
@@ -82,19 +82,19 @@ Acceptance Criteria:
 
 ### V0.5.2 - History And Food Gallery
 
-**Status:** NOT STARTED
+**Status:** COMPLETE
 
 Objective:
 Let Sola look backward, edit previous days, and browse food photos.
 
 Tasks:
 
-- Browse previous daily entries.
-- Open a day and edit its checklist/data.
-- Upload one or more food photos for a day.
-- Store food photos privately in Supabase Storage.
-- Add meal type and note metadata.
-- Build a scrapbook-style grid of clickable food photo cards.
+- [x] Browse previous daily entries.
+- [x] Open a day and edit its checklist/data.
+- [x] Upload one or more food photos for a day.
+- [x] Store food photos privately in Supabase Storage.
+- [x] Add meal type and note metadata.
+- [x] Build a scrapbook-style grid of clickable food photo cards.
 
 Acceptance Criteria:
 
@@ -104,18 +104,20 @@ Acceptance Criteria:
 
 ### V0.5.3 - Progress
 
-**Status:** NOT STARTED
+**Status:** COMPLETE
 
 Objective:
 Show small, useful weight progress without becoming a full analytics product.
 
 Tasks:
 
-- Show starting weight.
-- Show current/latest weight.
-- Show total weight change.
-- Show a weight-over-time graph.
-- Optionally add only trivial summaries from existing V0.5 data.
+- [x] Show starting weight.
+- [x] Show current/latest weight.
+- [x] Show total weight change.
+- [x] Show a real weight-over-time graph.
+- [x] Preserve elapsed calendar time on the X axis.
+- [x] Support Detail and All Time chart modes.
+- [x] Represent missing weigh-in dates without fabricating data.
 
 Acceptance Criteria:
 
@@ -125,24 +127,33 @@ Acceptance Criteria:
 
 ### V0.5.4 - Pixel Polish
 
-**Status:** NOT STARTED
+**Status:** PLANNING ONLY
 
 Objective:
 Progressively strengthen the cozy pixel-game presentation around the simple tracker.
 
+Planning source:
+
+- [V0.5.4.md](V0.5.4.md)
+
 Tasks:
 
-- Refine Today as a pixel clipboard or quest board.
-- Refine History as a pixel notebook or scrapbook.
-- Refine Progress as a chart board or graph-paper panel.
-- Add small mascot/static pose presentation if useful.
-- Improve mobile and desktop polish.
+- Plan refinements for Today as a pixel clipboard or quest board.
+- Plan refinements for History as a pixel notebook or scrapbook.
+- Plan refinements for Progress as a chart board or graph-paper panel.
+- Decide whether a small mascot/static pose presentation is useful.
+- Identify mobile and desktop polish priorities.
+- Identify original/licensed asset needs and avoid using planning-reference attachments as app assets.
 
 Acceptance Criteria:
 
 - The app feels cute, cozy, and personal without sacrificing real accessible controls.
 - Pixel presentation decorates and frames the UI rather than replacing functional inputs.
 - No game engine, player movement, or elaborate animation system is introduced.
+
+Implementation guardrail:
+
+- Do not implement V0.5.4 UI/art changes until Sola explicitly approves Pixel Polish implementation.
 
 ## Deferred V1 Roadmap
 

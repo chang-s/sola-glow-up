@@ -6,6 +6,8 @@ This document describes the approved architecture and current V0.5 pivot directi
 
 **ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker.
 
+Functional V0.5 is complete through V0.5.3. The next active work is V0.5.4 Pixel Polish planning only; do not implement new visual assets, mascot work, or UI polish until Sola explicitly approves implementation.
+
 The larger V1/Milestone 1 habit and routine system is preserved and deferred. V1 architecture remains useful long-term context, but it must not drive active implementation unless Sola explicitly resumes V1 work.
 
 ## Technology Stack
@@ -30,9 +32,9 @@ Milestone 0 uses `pnpm` as the package manager and pins TypeScript to `6.0.0-bet
 
 ### Active V0.5 Modules
 
-- `today`: the main daily check-in with a fixed checklist, daily fields, basic workout detail, food photo upload, monthly completion calendar, and current streaks.
-- `history`: previous daily entries and scrapbook-style food gallery.
-- `progress`: starting/current/latest weight, total change, and weight-over-time graph.
+- `today`: implemented main daily check-in with a fixed checklist, daily fields, basic workout detail, food photo upload, monthly completion calendar, and current streaks.
+- `history`: implemented previous daily entries and scrapbook-style food gallery.
+- `progress`: implemented starting/current/latest weight, total change, and weight-over-time graph with Detail and All Time views.
 - `auth`: existing Supabase email/password sign-in foundation.
 
 V0.5 should not expose broad V1 navigation. Active navigation should be limited to Today, History, and Progress.
@@ -141,7 +143,7 @@ Use private Supabase Storage buckets for:
 - Progress photos
 - Product images if needed
 
-For V0.5, the active storage need is food photos only. The approved private bucket name is `v05-food-photos`. Do not create or apply storage changes until Sola explicitly starts implementation/migration work.
+For V0.5, the active storage need is food photos only. The approved private bucket name is `v05-food-photos`, added by `0004_v05_daily_tracker.sql`.
 
 Photo database records store owner, storage path, date, label/type, related entity, and deletion state. Normal delete interactions should soft-delete records first. Permanent storage deletion is explicit and never automatic.
 

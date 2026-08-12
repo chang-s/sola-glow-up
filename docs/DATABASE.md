@@ -6,7 +6,7 @@ This document describes the intended Supabase/Postgres architecture and current 
 
 **ACTIVE DEVELOPMENT TARGET:** V0.5 daily personal tracker.
 
-No V0.5 migration has been created or applied yet. The V0.5 table and bucket names below are approved for implementation planning, but migration work must wait for Sola's explicit instruction.
+The V0.5 database foundation has been created and applied. Functional V0.5 uses the dedicated V0.5 tables and Storage bucket below.
 
 Current migration state:
 
@@ -16,6 +16,8 @@ Current migration state:
 - `0002_profiles_api_grants.sql` grants API table privileges for authenticated profile access while leaving row-level access to the owner-only RLS policies.
 - Remote migration history records `0003_habits_and_routines.sql` as applied.
 - Milestone 1 adds universal habit and routine tables in `supabase/migrations/0003_habits_and_routines.sql`.
+- Remote migration history records `0004_v05_daily_tracker.sql` as applied.
+- `0004_v05_daily_tracker.sql` adds `v05_daily_entries`, `v05_checklist_completions`, `v05_food_photos`, and the private `v05-food-photos` Storage bucket/policies.
 - Goals/sprints remain deferred because the Goals model is provisional until Milestone 3 refinement.
 - The V1 habit/routine tables are dormant for active V0.5 work. Do not drop, reset, rewrite, or migrate away from them.
 
@@ -32,7 +34,7 @@ Current migration state:
 
 ## Approved V0.5 Tables
 
-These table names are approved. Do not create or apply a migration until Sola explicitly starts implementation/migration work.
+These table names are approved and implemented in `supabase/migrations/0004_v05_daily_tracker.sql`.
 
 ### `v05_daily_entries`
 
@@ -112,7 +114,7 @@ Support Today food photo uploads and the History scrapbook gallery. Food photos 
 
 ### V0.5 RLS And Storage Direction
 
-V0.5 tables should use owner-only RLS following the existing `profiles` ownership pattern. Authenticated users may read, insert, and update only their own rows. Normal V0.5 UI should not permanently delete photo storage objects.
+V0.5 tables use owner-only RLS following the existing `profiles` ownership pattern. Authenticated users may read, insert, and update only their own rows. Food photo metadata is soft-deleted in the database. Storage object deletion is owner-scoped for the private V0.5 bucket.
 
 Storage paths should include an owner/profile prefix to make private bucket policies straightforward.
 
