@@ -1,12 +1,14 @@
-import { type FormEvent, type ReactNode, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
 	Bed,
 	CalendarDays,
+	Camera,
 	Check,
 	ChevronLeft,
 	ChevronRight,
 	Dumbbell,
+	ImageOff,
 	Moon,
 	PencilLine,
 	Pill,
@@ -18,6 +20,7 @@ import {
 	Utensils,
 	Weight
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { getDueChecklistItems, type V05ChecklistItemKey } from "./checklist";
 import {
@@ -29,6 +32,8 @@ import {
 	toMonthKey,
 	toLocalDateKey
 } from "./date";
+import { FoodPhotoDialog } from "./FoodPhotoDialog";
+import { foodPhotoAlt } from "./foodPhoto";
 import { useV05Today } from "./useV05Today";
 import {
 	calculateStreaks,
@@ -37,7 +42,13 @@ import {
 	type CompletionState,
 	type StreakId
 } from "./motivation";
-import type { V05DailyEntryInput, V05MotivationData, V05TodayData } from "./types";
+import type {
+	V05DailyEntryInput,
+	V05FoodPhotoWithUrl,
+	V05MealType,
+	V05MotivationData,
+	V05TodayData
+} from "./types";
 
 type TodayFormState = {
 	weight: string;
@@ -66,6 +77,7 @@ const emptyForm: TodayFormState = {
 };
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const mealTypes: V05MealType[] = ["Breakfast", "Lunch", "Dinner", "Snack", "Other"];
 const completionLabels: Record<CompletionState, string> = {
 	great: "Great day",
 	good: "Good day",
@@ -200,6 +212,9 @@ type TodayCheckInProps = {
 	todayData: V05TodayData | undefined;
 	saveDailyEntry: TodayHook["saveDailyEntry"];
 	setChecklistCompletion: TodayHook["setChecklistCompletion"];
+	foodPhotos: TodayHook["foodPhotos"];
+	uploadFoodPhoto: TodayHook["uploadFoodPhoto"];
+	deleteFoodPhoto: TodayHook["deleteFoodPhoto"];
 };
 
 function TodayCheckIn({
@@ -210,7 +225,10 @@ function TodayCheckIn({
 	hasEntry,
 	todayData,
 	saveDailyEntry,
-	setChecklistCompletion
+	setChecklistCompletion,
+	foodPhotos,
+	uploadFoodPhoto,
+	deleteFoodPhoto
 }: TodayCheckInProps) {
 	const [form, setForm] = useState<TodayFormState>(() => toFormState(todayData));
 	const [checklistState, setChecklistState] = useState<
@@ -446,13 +464,15 @@ function TodayCheckIn({
 					</section>
 
 					<section className="food-photo-preview" aria-labelledby="food-photo-title">
-						<PencilLine aria-hidden="true" size={18} />
-						<div>
-							<h4 id="food-photo-title">Food photos later</h4>
-							<p className="mini-note">
-								Upload and scrapbook features are planned for the next History/Food step.
-							</p>
-						</div>
+						<FoodPhotoSection
+							dateKey={dateKey}
+							isConfigured={isConfigured}
+							isLoading={foodPhotos.isLoading}
+							hasLoadError={Boolean(foodPhotos.error)}
+							photos={foodPhotos.data ?? []}
+							uploadFoodPhoto={uploadFoodPhoto}
+							deleteFoodPhoto={deleteFoodPhoto}
+						/>
 					</section>
 
 					{saveStatus === "error" ? (
@@ -470,6 +490,208 @@ function TodayCheckIn({
 						{isSavingFields ? "Saving..." : "Save today's check-in"}
 					</button>
 				</form>
+	);
+}
+
+function FoodPhotoSection({
+	dateKey,
+	isConfigured,
+	isLoading,
+	hasLoadError,
+	photos,
+	uploadFoodPhoto,
+	deleteFoodPhoto
+}: {
+	dateKey: string;
+	isConfigured: boolean;
+	isLoading: boolean;
+	hasLoadError: boolean;
+	photos: V05FoodPhotoWithUrl[];
+	uploadFoodPhoto: TodayHook["uploadFoodPhoto"];
+	deleteFoodPhoto: TodayHook["deleteFoodPhoto"];
+}) {
+	const [file, setFile] = useState<File | null>(null);
+	const [mealType, setMealType] = useState<"" | V05MealType>("");
+	const [note, setNote] = useState("");
+	const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
+	const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
+	const fileInputId = useId();
+	const isUploading = uploadFoodPhoto.isPending;
+	const isDeleting = deleteFoodPhoto.isPending;
+	const selectedPhotoIndex = photos.findIndex((photo) => photo.id === selectedPhotoId);
+	const selectedPhoto = selectedPhotoIndex >= 0 ? photos[selectedPhotoIndex] : null;
+
+	async function handleUpload() {
+		if (!file) {
+			setStatus("error");
+			return;
+		}
+
+		try {
+			await uploadFoodPhoto.mutateAsync({
+				file,
+				meal_type: mealType || null,
+				note: note.trim() || null
+			});
+			setFile(null);
+			setMealType("");
+			setNote("");
+			setStatus("saved");
+		} catch {
+			setStatus("error");
+		}
+	}
+
+	async function handleDelete(photo: V05FoodPhotoWithUrl) {
+		const confirmed = window.confirm("Remove this food photo from your scrapbook?");
+		if (!confirmed) return;
+
+		try {
+			await deleteFoodPhoto.mutateAsync(photo);
+			setSelectedPhotoId(null);
+			setStatus("saved");
+		} catch {
+			setStatus("error");
+		}
+	}
+
+	return (
+		<div className="food-upload-panel">
+			<div className="section-heading compact">
+				<div>
+					<p className="eyebrow">Food scrapbook</p>
+					<h4 id="food-photo-title">Food photos</h4>
+				</div>
+				<Camera aria-hidden="true" size={18} />
+			</div>
+
+			<div className="food-upload-grid">
+				<div className="food-field-card photo-picker-card">
+					<FieldLabel Icon={Camera}>Photo</FieldLabel>
+					<input
+						id={fileInputId}
+						className="native-file-input"
+						type="file"
+						accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*"
+						disabled={!isConfigured || isUploading}
+						onChange={(event) => {
+							setFile(event.target.files?.[0] ?? null);
+							setStatus("idle");
+						}}
+					/>
+					<label className="photo-picker-button" htmlFor={fileInputId}>
+						<Camera aria-hidden="true" size={16} />
+						Choose or take photo
+					</label>
+					<p className={`selected-file-name ${file ? "has-file" : ""}`}>
+						{file ? `Selected: ${file.name}` : "No photo selected yet"}
+					</p>
+				</div>
+				<label className="food-field-card">
+					<FieldLabel Icon={Utensils}>Meal type</FieldLabel>
+					<select
+						value={mealType}
+						disabled={!isConfigured || isUploading}
+						onChange={(event) => setMealType(event.target.value as "" | V05MealType)}
+					>
+						<option value="">Choose one</option>
+						{mealTypes.map((type) => (
+							<option key={type} value={type}>
+								{type}
+							</option>
+						))}
+					</select>
+				</label>
+				<label className="food-field-card">
+					<FieldLabel Icon={PencilLine}>Food note</FieldLabel>
+					<input
+						type="text"
+						value={note}
+						disabled={!isConfigured || isUploading}
+						onChange={(event) => {
+							setNote(event.target.value);
+							setStatus("idle");
+						}}
+						placeholder="Salmon + veggies"
+					/>
+				</label>
+			</div>
+
+			<button
+				type="button"
+				className="save-checkin-button food-upload-button"
+				disabled={!isConfigured || !file || isUploading}
+				onClick={() => void handleUpload()}
+			>
+				<ShieldCheck aria-hidden="true" size={18} />
+				{isUploading ? "Uploading..." : `Add photo for ${formatFriendlyDate(dateKey)}`}
+			</button>
+
+			{status === "saved" ? <p className="mini-note">Food photo saved.</p> : null}
+			{status === "error" ? (
+				<p className="form-error" role="alert">
+					Food photo could not save. Please choose an image and try again.
+				</p>
+			) : null}
+			{hasLoadError ? (
+				<p className="mini-note error-copy" role="status">
+					Food thumbnails could not load. Your check-in still works.
+				</p>
+			) : null}
+			{isLoading ? <p className="mini-note">Loading food photos...</p> : null}
+
+			{photos.length ? (
+				<div className="today-photo-strip" aria-label="Food photos for this day">
+					{photos.map((photo) => (
+						<div className="today-photo-chip" key={photo.id}>
+							<button
+								type="button"
+								className="photo-thumb-button"
+								aria-label={`Open ${foodPhotoAlt(photo)}`}
+								onClick={() => setSelectedPhotoId(photo.id)}
+							>
+								{photo.signedUrl ? (
+									<img src={photo.signedUrl} alt={foodPhotoAlt(photo)} />
+								) : (
+									<span className="photo-fallback" aria-label="Photo preview unavailable">
+										<ImageOff size={18} />
+									</span>
+								)}
+							</button>
+							<div>
+								<strong>{photo.meal_type ?? "Food photo"}</strong>
+								{photo.note ? <small>{photo.note}</small> : null}
+							</div>
+							<button
+								type="button"
+								className="icon-button danger"
+								aria-label={`Delete ${foodPhotoAlt(photo)}`}
+								disabled={isDeleting}
+								onClick={() => void handleDelete(photo)}
+							>
+								Delete
+							</button>
+						</div>
+					))}
+				</div>
+			) : (
+				<p className="mini-note">Your food scrapbook is waiting for its first photo.</p>
+			)}
+			{selectedPhoto ? (
+				<FoodPhotoDialog
+					photo={selectedPhoto}
+					isDeleting={isDeleting}
+					onClose={() => setSelectedPhotoId(null)}
+					onDelete={() => void handleDelete(selectedPhoto)}
+					position={selectedPhotoIndex + 1}
+					total={photos.length}
+					canGoPrevious={selectedPhotoIndex > 0}
+					canGoNext={selectedPhotoIndex < photos.length - 1}
+					onPrevious={() => setSelectedPhotoId(photos[selectedPhotoIndex - 1]?.id ?? null)}
+					onNext={() => setSelectedPhotoId(photos[selectedPhotoIndex + 1]?.id ?? null)}
+				/>
+			) : null}
+		</div>
 	);
 }
 
@@ -630,14 +852,23 @@ function TodayMotivation({
 
 export function TodayPage() {
 	const { isConfigured } = useAuth();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const todayKey = toLocalDateKey();
-	const [dateKey, setDateKey] = useState(() => todayKey);
-	const [displayMonthKey, setDisplayMonthKey] = useState(() => toMonthKey(todayKey));
-	const { profile, today, motivation, saveDailyEntry, setChecklistCompletion } = useV05Today(
-		dateKey,
-		displayMonthKey,
-		todayKey
+	const initialDateKey = searchParams.get("date");
+	const [dateKey, setDateKey] = useState(() =>
+		initialDateKey && initialDateKey <= todayKey ? initialDateKey : todayKey
 	);
+	const [displayMonthKey, setDisplayMonthKey] = useState(() => toMonthKey(todayKey));
+	const {
+		profile,
+		today,
+		motivation,
+		foodPhotos,
+		saveDailyEntry,
+		setChecklistCompletion,
+		uploadFoodPhoto,
+		deleteFoodPhoto
+	} = useV05Today(dateKey, displayMonthKey, todayKey);
 	const isLoading = profile.isLoading || today.isLoading;
 	const hasLoadError = Boolean(profile.error || today.error);
 	const hasEntry = Boolean(today.data?.dailyEntry);
@@ -652,8 +883,10 @@ export function TodayPage() {
 	].join("|");
 
 	function handleActiveDateChange(nextDateKey: string) {
-		setDateKey(nextDateKey);
-		setDisplayMonthKey(toMonthKey(nextDateKey));
+		const safeDateKey = nextDateKey > todayKey ? todayKey : nextDateKey;
+		setDateKey(safeDateKey);
+		setDisplayMonthKey(toMonthKey(safeDateKey));
+		setSearchParams(safeDateKey === todayKey ? {} : { date: safeDateKey });
 	}
 
 	return (
@@ -685,6 +918,9 @@ export function TodayPage() {
 					todayData={today.data}
 					saveDailyEntry={saveDailyEntry}
 					setChecklistCompletion={setChecklistCompletion}
+					foodPhotos={foodPhotos}
+					uploadFoodPhoto={uploadFoodPhoto}
+					deleteFoodPhoto={deleteFoodPhoto}
 				/>
 				<TodayMotivation
 					displayMonthKey={displayMonthKey}

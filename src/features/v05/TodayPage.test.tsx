@@ -1,14 +1,18 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TodayPage } from "./TodayPage";
-import type { V05MotivationData, V05TodayData } from "./types";
+import type { V05FoodPhotoWithUrl, V05MotivationData, V05TodayData } from "./types";
 
 const mockSaveDailyEntry = vi.fn();
 const mockSetChecklistCompletion = vi.fn();
+const mockUploadFoodPhoto = vi.fn();
+const mockDeleteFoodPhoto = vi.fn();
 let mockTodayData: V05TodayData;
 let mockTodayDataByDate: Record<string, V05TodayData>;
 let mockMotivationData: V05MotivationData;
 let mockMotivationError: Error | null;
+let mockFoodPhotos: V05FoodPhotoWithUrl[];
 
 vi.mock("../auth/useAuth", () => ({
 	useAuth: () => ({ isConfigured: true })
@@ -27,6 +31,11 @@ vi.mock("./useV05Today", () => ({
 			error: mockMotivationError,
 			data: mockMotivationData
 		},
+		foodPhotos: {
+			isLoading: false,
+			error: null,
+			data: mockFoodPhotos
+		},
 		saveDailyEntry: {
 			isPending: false,
 			mutateAsync: (input: unknown) => mockSaveDailyEntry({ dateKey, input })
@@ -35,6 +44,14 @@ vi.mock("./useV05Today", () => ({
 			isPending: false,
 			mutateAsync: (input: unknown) =>
 				mockSetChecklistCompletion({ dateKey, ...(input as object) })
+		},
+		uploadFoodPhoto: {
+			isPending: false,
+			mutateAsync: (input: unknown) => mockUploadFoodPhoto({ dateKey, input })
+		},
+		deleteFoodPhoto: {
+			isPending: false,
+			mutateAsync: (input: unknown) => mockDeleteFoodPhoto({ dateKey, input })
 		}
 	})
 }));
@@ -51,7 +68,11 @@ function renderToday(
 	mockTodayData = data;
 	mockTodayDataByDate = dataByDate;
 	mockMotivationData = motivationData;
-	return render(<TodayPage />);
+	return render(
+		<MemoryRouter>
+			<TodayPage />
+		</MemoryRouter>
+	);
 }
 
 function setEntryDate(dateKey: string) {
@@ -71,8 +92,11 @@ describe("V0.5 Today page", () => {
 			checklistCompletions: []
 		};
 		mockMotivationError = null;
+		mockFoodPhotos = [];
 		mockSaveDailyEntry.mockResolvedValue({});
 		mockSetChecklistCompletion.mockResolvedValue({});
+		mockUploadFoodPhoto.mockResolvedValue({});
+		mockDeleteFoodPhoto.mockResolvedValue({});
 	});
 
 	it("renders daily and every-other-day due items for August 12", () => {
@@ -96,7 +120,7 @@ describe("V0.5 Today page", () => {
 		renderToday();
 
 		fireEvent.change(screen.getByLabelText("Entry date"), {
-			target: { value: "2026-08-13" }
+			target: { value: "2026-08-11" }
 		});
 
 		expect(screen.getByLabelText("Morning Skincare")).toBeInTheDocument();
@@ -344,6 +368,73 @@ describe("V0.5 Today page", () => {
 		expect(screen.getByLabelText(/Weight/)).toBeInTheDocument();
 		expect(screen.getByLabelText("Steps")).toBeInTheDocument();
 		expect(screen.getByLabelText("Yesterday's calories")).toBeInTheDocument();
+	});
+
+	it("uses styled food upload controls while keeping the real file input accessible", () => {
+		const { container } = renderToday();
+		const file = new File(["tiny"], "somi-photo.jpg", { type: "image/jpeg" });
+		const fileInput = screen.getByLabelText("Choose or take photo");
+
+		expect(fileInput).toHaveAttribute("type", "file");
+		expect(fileInput).toHaveAttribute("accept", expect.stringContaining("image/*"));
+		expect(container.querySelector(".photo-picker-button")).toHaveTextContent(
+			"Choose or take photo"
+		);
+
+		fireEvent.change(fileInput, { target: { files: [file] } });
+
+		expect(screen.getByText("Selected: somi-photo.jpg")).toBeInTheDocument();
+		expect(screen.getByLabelText("Meal type")).toBeInTheDocument();
+		expect(screen.getByRole("option", { name: "Choose one" })).toHaveValue("");
+		expect(screen.getByLabelText("Food note")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("Salmon + veggies")).toBeInTheDocument();
+	});
+
+	it("opens shared photo detail from a Today thumbnail and deletes from it", async () => {
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		mockFoodPhotos = [
+			{
+				id: "photo-1",
+				user_id: "profile-1",
+				entry_date: "2026-08-12",
+				storage_path: "profile-1/2026-08-12/photo.jpg",
+				meal_type: "Snack",
+				note: "Protein shake",
+				signedUrl: "https://signed.example/photo",
+				deleted_at: null
+			},
+			{
+				id: "photo-2",
+				user_id: "profile-1",
+				entry_date: "2026-08-12",
+				storage_path: "profile-1/2026-08-12/photo-2.jpg",
+				meal_type: "Dinner",
+				note: "Second photo",
+				signedUrl: "https://signed.example/photo-2",
+				deleted_at: null
+			}
+		];
+		renderToday();
+
+		fireEvent.click(screen.getByRole("button", { name: /Open Snack food photo/ }));
+
+		const dialog = screen.getByRole("dialog", { name: "Snack" });
+		expect(dialog).toBeInTheDocument();
+		expect(within(dialog).getByText("Protein shake")).toBeInTheDocument();
+		expect(screen.getByText("1 of 2")).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+		expect(screen.getByRole("dialog", { name: "Dinner" })).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Delete photo" }));
+
+		await waitFor(() => {
+			expect(mockDeleteFoodPhoto).toHaveBeenCalledWith(
+				expect.objectContaining({
+					dateKey: "2026-08-12",
+					input: expect.objectContaining({ id: "photo-2" })
+				})
+			);
+		});
 	});
 
 	it("renders real calendar completion states with selected and today states", () => {

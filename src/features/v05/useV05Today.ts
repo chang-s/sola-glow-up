@@ -2,14 +2,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateProfile } from "../habits/api";
 import { useAuth } from "../auth/useAuth";
 import {
+	deleteV05FoodPhoto,
+	loadV05FoodPhotos,
+	loadV05HistoryData,
 	loadV05MotivationData,
 	loadV05TodayData,
 	saveV05DailyEntry,
-	setV05ChecklistCompletion
+	setV05ChecklistCompletion,
+	uploadV05FoodPhoto
 } from "./api";
 import { getMonthRange } from "./date";
 import type { V05ChecklistItemKey } from "./checklist";
-import type { V05DailyEntryInput } from "./types";
+import type { V05DailyEntryInput, V05FoodPhoto, V05FoodPhotoInput } from "./types";
 
 export function useV05Profile() {
 	const { user, isConfigured } = useAuth();
@@ -29,6 +33,7 @@ export function useV05Today(dateKey: string, displayMonthKey: string, todayKey: 
 	const profile = useV05Profile();
 	const todayQueryKey = ["v05-today", profile.data?.id, dateKey];
 	const motivationQueryKey = ["v05-motivation", profile.data?.id, displayMonthKey, todayKey];
+	const foodPhotosQueryKey = ["v05-food-photos", profile.data?.id, dateKey];
 
 	const today = useQuery({
 		queryKey: todayQueryKey,
@@ -47,6 +52,12 @@ export function useV05Today(dateKey: string, displayMonthKey: string, todayKey: 
 		}
 	});
 
+	const foodPhotos = useQuery({
+		queryKey: foodPhotosQueryKey,
+		enabled: Boolean(profile.data?.id),
+		queryFn: () => loadV05FoodPhotos(profile.data!.id, dateKey)
+	});
+
 	const saveDailyEntry = useMutation({
 		mutationFn: (input: V05DailyEntryInput) => {
 			if (!profile.data?.id) throw new Error("Profile is not ready.");
@@ -56,6 +67,9 @@ export function useV05Today(dateKey: string, displayMonthKey: string, todayKey: 
 			void queryClient.invalidateQueries({ queryKey: todayQueryKey });
 			void queryClient.invalidateQueries({
 				queryKey: ["v05-motivation", profile.data?.id]
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-history", profile.data?.id]
 			});
 		}
 	});
@@ -75,6 +89,39 @@ export function useV05Today(dateKey: string, displayMonthKey: string, todayKey: 
 			void queryClient.invalidateQueries({
 				queryKey: ["v05-motivation", profile.data?.id]
 			});
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-history", profile.data?.id]
+			});
+		}
+	});
+
+	const uploadFoodPhoto = useMutation({
+		mutationFn: (input: V05FoodPhotoInput) => {
+			if (!profile.data?.id) throw new Error("Profile is not ready.");
+			return uploadV05FoodPhoto(profile.data.id, dateKey, input);
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: todayQueryKey });
+			void queryClient.invalidateQueries({ queryKey: foodPhotosQueryKey });
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-motivation", profile.data?.id]
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-history", profile.data?.id]
+			});
+		}
+	});
+
+	const deleteFoodPhoto = useMutation({
+		mutationFn: (photo: V05FoodPhoto) => {
+			if (!profile.data?.id) throw new Error("Profile is not ready.");
+			return deleteV05FoodPhoto(profile.data.id, photo);
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: foodPhotosQueryKey });
+			void queryClient.invalidateQueries({
+				queryKey: ["v05-history", profile.data?.id]
+			});
 		}
 	});
 
@@ -82,7 +129,22 @@ export function useV05Today(dateKey: string, displayMonthKey: string, todayKey: 
 		profile,
 		today,
 		motivation,
+		foodPhotos,
 		saveDailyEntry,
-		setChecklistCompletion
+		setChecklistCompletion,
+		uploadFoodPhoto,
+		deleteFoodPhoto
 	};
+}
+
+export function useV05History() {
+	const profile = useV05Profile();
+
+	const history = useQuery({
+		queryKey: ["v05-history", profile.data?.id],
+		enabled: Boolean(profile.data?.id),
+		queryFn: () => loadV05HistoryData(profile.data!.id)
+	});
+
+	return { profile, history };
 }
