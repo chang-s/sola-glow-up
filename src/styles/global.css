@@ -680,8 +680,15 @@ textarea:focus-visible {
 	white-space: nowrap;
 }
 
+.photo-action-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
 .photo-picker-button {
 	display: inline-flex;
+	flex: 1 1 9rem;
 	align-items: center;
 	justify-content: center;
 	gap: 0.45rem;
@@ -698,23 +705,30 @@ textarea:focus-visible {
 	white-space: nowrap;
 }
 
+.mobile-photo-action {
+	display: none;
+}
+
 .selected-file-name {
 	margin: 0;
 	overflow: hidden;
 	color: var(--muted);
 	font-size: 0.75rem;
-	font-weight: 800;
+	font-style: italic;
+	font-weight: 400;
+	text-align: center;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
 .selected-file-name.has-file {
 	color: #3f8063;
+	font-style: normal;
 }
 
 .food-upload-button {
 	justify-self: start;
-	font-weight: 650;
+	font-weight: 400;
 }
 
 .today-photo-strip,
@@ -1066,10 +1080,15 @@ textarea:focus-visible {
 
 .history-layout {
 	grid-template-columns: minmax(16rem, 0.7fr) minmax(0, 1fr);
+	align-items: start;
 }
 
 .notebook-panel,
 .scrapbook-panel {
+	display: grid;
+	align-content: start;
+	align-items: start;
+	gap: 1rem;
 	min-height: 18rem;
 }
 
@@ -1143,14 +1162,18 @@ textarea:focus-visible {
 	background: rgba(255, 247, 237, 0.75);
 	color: var(--muted);
 	font-size: 0.72rem;
-	font-weight: 800;
+	font-weight: 400;
 }
 
 .day-picker {
-	display: grid;
-	grid-template-columns: 2.35rem minmax(0, 1fr) 2.35rem;
-	gap: 0.4rem;
+	display: inline-flex;
+	align-self: start;
 	align-items: center;
+	justify-self: center;
+	gap: 0.35rem;
+	width: max-content;
+	max-width: 100%;
+	margin-inline: auto;
 }
 
 .day-picker button,
@@ -1165,32 +1188,60 @@ textarea:focus-visible {
 
 .day-picker button {
 	display: inline-grid;
+	flex: 0 0 2.35rem;
 	place-items: center;
+	width: 2.35rem;
 	cursor: pointer;
 }
 
+.history-date-control {
+	position: relative;
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+}
+
 .day-picker input {
-	width: 100%;
-	padding: 0 0.55rem;
+	width: 10.25rem;
+	padding: 0 2rem 0 0.55rem;
 	text-align: center;
 }
 
+.history-date-control svg {
+	position: absolute;
+	right: 0.55rem;
+	pointer-events: none;
+	color: var(--muted);
+}
+
 .day-detail-grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
 	gap: 0.65rem;
+}
+
+.day-detail-layout {
+	display: grid;
+	grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
+	gap: 0.8rem;
+	align-items: start;
 }
 
 .metric-note {
 	display: grid;
+	flex: 0 1 12rem;
 	gap: 0.15rem;
+	width: min(100%, 12rem);
+	max-width: 16rem;
 	padding: 0.65rem;
 	border: 2px solid var(--ink);
 	border-radius: 0.22rem;
 	background: rgba(255, 247, 237, 0.82);
+	box-shadow: 0.12rem 0.12rem 0 var(--ink);
 }
 
-.metric-note span {
+.metric-note > span {
 	color: var(--muted);
 	font-size: 0.72rem;
 	font-weight: 850;
@@ -1199,31 +1250,82 @@ textarea:focus-visible {
 
 .metric-note strong {
 	overflow-wrap: anywhere;
+	white-space: pre-line;
 }
 
-.completed-checklist-summary {
+.metric-secondary {
+	color: var(--ink);
+	font-size: 0.86rem;
+	font-weight: 400;
+}
+
+.checklist-summary-card {
+	width: 100%;
+	max-width: 22rem;
+}
+
+.history-checklist-list {
+	display: grid;
+	gap: 0.42rem;
+	margin: 0.5rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.history-checklist-list li {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 0.4rem;
-}
-
-.completed-chip {
-	display: inline-flex;
 	align-items: center;
-	gap: 0.3rem;
-	padding: 0.28rem 0.45rem;
-	border: 2px solid var(--ink);
-	border-radius: 0.2rem;
-	background: var(--green-soft);
-	box-shadow: 0.1rem 0.1rem 0 var(--ink);
+	gap: 0.45rem;
 	color: var(--ink);
 	font-size: 0.78rem;
+	font-weight: 400;
+}
+
+.history-check-symbol {
+	flex: 0 0 auto;
+	width: 1.25rem;
+	text-align: center;
+	line-height: 1;
+}
+
+.history-checklist-list .incomplete {
+	color: var(--muted);
+}
+
+.show-more-button {
+	min-height: 2.4rem;
+	border: 2px solid var(--ink);
+	border-radius: 0.25rem;
+	background: var(--butter);
+	box-shadow: 0.14rem 0.14rem 0 var(--ink);
+	color: var(--ink);
+	cursor: pointer;
 	font-weight: 850;
 }
 
-.completed-chip .pixel-art-icon {
-	width: 1rem;
-	height: 1rem;
+.edit-day-link,
+.edit-day-link *,
+.edit-day-link:hover,
+.edit-day-link:focus,
+.edit-day-link:visited {
+	text-decoration: none;
+}
+
+.edit-day-link svg {
+	display: block;
+	flex: 0 0 auto;
+	text-decoration: none;
+}
+
+.edit-day-link svg *,
+.edit-day-link:hover svg *,
+.edit-day-link:focus svg * {
+	text-decoration: none;
+}
+
+.section-heading.day-page-heading {
+	justify-content: space-between;
+	text-align: left;
 }
 
 .day-photo-strip {
@@ -1340,10 +1442,19 @@ textarea:focus-visible {
 
 .photo-dialog-shell {
 	display: grid;
-	grid-template-columns: 3rem minmax(0, 42rem) 3rem;
 	gap: 1rem;
 	align-items: center;
 	width: min(100%, 52rem);
+	min-width: 0;
+}
+
+.photo-dialog-shell.with-navigation {
+	grid-template-columns: 3rem minmax(0, 42rem) 3rem;
+}
+
+.photo-dialog-shell.single-photo {
+	grid-template-columns: minmax(0, 42rem);
+	width: min(100%, 42rem);
 }
 
 .photo-dialog {
@@ -1411,6 +1522,8 @@ textarea:focus-visible {
 	place-items: center;
 	overflow: hidden;
 	width: 100%;
+	height: min(68dvh, 34rem);
+	aspect-ratio: 4 / 3;
 	border: 3px solid var(--ink);
 	border-radius: 0.22rem;
 	background: #fffdf8;
@@ -1458,27 +1571,6 @@ textarea:focus-visible {
 	border-radius: 0.25rem;
 	background: #fff7ed;
 	text-align: center;
-}
-
-.metric-pixel-icon {
-	position: absolute;
-	top: 0.45rem;
-	right: 0.45rem;
-	display: inline-grid;
-	place-items: center;
-	width: 1.85rem;
-	aspect-ratio: 1;
-}
-
-.metric-pixel-icon .pixel-art-icon {
-	width: 1.35rem;
-	height: 1.35rem;
-}
-
-.decorative-chart-icon {
-	border: 0;
-	background: transparent;
-	box-shadow: none;
 }
 
 .metric-card.positive {
@@ -2469,6 +2561,10 @@ textarea:focus-visible {
 		display: none;
 	}
 
+	.mobile-photo-action {
+		display: inline-flex;
+	}
+
 	.mobile-bottom-nav {
 		position: fixed;
 		right: 0;
@@ -2529,9 +2625,12 @@ textarea:focus-visible {
 	}
 
 	.field-preview-grid,
-	.scrapbook-grid,
-	.day-detail-grid {
+	.scrapbook-grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.day-detail-layout {
+		grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
 	}
 
 	.wide-field {
@@ -2576,6 +2675,10 @@ textarea:focus-visible {
 		width: min(100%, calc(100vw - 2rem));
 	}
 
+	.photo-dialog-shell.single-photo {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.edit-dialog {
 		width: 100%;
 		max-height: 86vh;
@@ -2590,8 +2693,11 @@ textarea:focus-visible {
 	}
 
 	.field-preview-grid,
-	.scrapbook-grid,
-	.day-detail-grid {
+	.scrapbook-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.day-detail-layout {
 		grid-template-columns: 1fr;
 	}
 
@@ -2634,6 +2740,10 @@ textarea:focus-visible {
 		width: min(100%, calc(100vw - 1rem));
 	}
 
+	.photo-dialog-shell.single-photo {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.photo-dialog-viewer {
 		padding-inline: 0;
 	}
@@ -2672,4 +2782,5 @@ textarea:focus-visible {
 	.login-form button:hover {
 		transform: translateY(-1px);
 	}
+
 }

@@ -28,6 +28,7 @@ export function FoodPhotoDialog({
 	onNext?: () => void;
 }) {
 	const closeButtonRef = useRef<HTMLButtonElement>(null);
+	const hasNavigation = Boolean(total && total > 1);
 
 	useEffect(() => {
 		closeButtonRef.current?.focus();
@@ -47,8 +48,11 @@ export function FoodPhotoDialog({
 
 	return (
 		<div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-			<div className="photo-dialog-shell" onMouseDown={(event) => event.stopPropagation()}>
-				{total && total > 1 ? (
+			<div
+				className={`photo-dialog-shell ${hasNavigation ? "with-navigation" : "single-photo"}`}
+				onMouseDown={(event) => event.stopPropagation()}
+			>
+				{hasNavigation ? (
 					<button
 						type="button"
 						className="photo-dialog-arrow previous"
@@ -79,7 +83,7 @@ export function FoodPhotoDialog({
 							Close
 						</button>
 					</div>
-					{total && total > 1 ? (
+					{hasNavigation ? (
 						<div className="photo-dialog-nav" aria-label="Photo navigation">
 							<span>{position} of {total}</span>
 						</div>
@@ -111,7 +115,7 @@ export function FoodPhotoDialog({
 						{isDeleting ? "Deleting..." : "Delete photo"}
 					</button>
 				</section>
-				{total && total > 1 ? (
+				{hasNavigation ? (
 					<button
 						type="button"
 						className="photo-dialog-arrow next"

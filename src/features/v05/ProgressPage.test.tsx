@@ -515,7 +515,7 @@ describe("V0.5 Progress page", () => {
 		expect(css).toContain(".route-mascot {\n\t\tdisplay: none;");
 	});
 
-	it("keeps decorative Progress icons out of the interactive controls", () => {
+	it("omits decorative Progress icons while keeping chart controls", () => {
 		const { container } = renderProgress({
 			weightEntries: [
 				{ entry_date: "2026-08-12", weight: 181.6 },
@@ -523,14 +523,12 @@ describe("V0.5 Progress page", () => {
 			]
 		});
 
-		expect(container.querySelectorAll(".metric-pixel-icon")).toHaveLength(3);
-		expect(container.querySelector(".decorative-chart-icon")).toBeInTheDocument();
-		expect(container.querySelector(".metric-pixel-icon button")).not.toBeInTheDocument();
+		expect(container.querySelectorAll(".metric-pixel-icon")).toHaveLength(0);
+		expect(container.querySelector(".decorative-chart-icon")).not.toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Detail" })).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "All Time" })).toBeInTheDocument();
 		expect(screen.queryByRole("button", { name: /weight trend/i })).not.toBeInTheDocument();
-		expect(css).toContain(".decorative-chart-icon {\n\tborder: 0;");
-		expect(css).toContain(".metric-pixel-icon {\n\tposition: absolute;");
-		expect(css).not.toContain(".metric-pixel-icon {\n\tposition: absolute;\n\ttop: 0.45rem;\n\tright: 0.45rem;\n\twidth: 1.85rem;\n\taspect-ratio: 1;\n\tbackground: #fffdf8;");
+		expect(css).not.toContain(".decorative-chart-icon");
+		expect(css).not.toContain(".metric-pixel-icon");
 	});
 });

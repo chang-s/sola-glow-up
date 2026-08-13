@@ -40,11 +40,10 @@ import type {
 type TodayFormState = {
 	weight: string;
 	steps: string;
-	sleepHours: string;
-	sleepMinutes: string;
+	sleepDuration: string;
 	bedtime: string;
 	wakeTime: string;
-	previousDayCalories: string;
+	calories: string;
 	workoutActivityType: string;
 	workoutDurationMinutes: string;
 	notes: string;
@@ -53,11 +52,10 @@ type TodayFormState = {
 const emptyForm: TodayFormState = {
 	weight: "",
 	steps: "",
-	sleepHours: "",
-	sleepMinutes: "",
+	sleepDuration: "",
 	bedtime: "",
 	wakeTime: "",
-	previousDayCalories: "",
+	calories: "",
 	workoutActivityType: "",
 	workoutDurationMinutes: "",
 	notes: ""
@@ -116,6 +114,39 @@ function toTimeOrNull(value: string) {
 	return value ? value : null;
 }
 
+function formatSleepDurationInput(totalMinutes: number | null) {
+	if (totalMinutes == null) return "";
+
+	const hours = Math.floor(totalMinutes / 60);
+	const minutes = totalMinutes % 60;
+
+	return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function parseSleepDuration(value: string) {
+	const trimmed = value.trim();
+	if (!trimmed) return { minutes: null, error: null };
+
+	const match = /^(\d+):(\d{2})$/.exec(trimmed);
+	if (!match) {
+		return {
+			minutes: null,
+			error: "Enter sleep as HH:MM, like 07:30."
+		};
+	}
+
+	const hours = Number.parseInt(match[1], 10);
+	const minutes = Number.parseInt(match[2], 10);
+	if (minutes > 59) {
+		return {
+			minutes: null,
+			error: "Sleep minutes must be between 00 and 59."
+		};
+	}
+
+	return { minutes: hours * 60 + minutes, error: null };
+}
+
 function toFormState(data: V05TodayData | undefined): TodayFormState {
 	const entry = data?.dailyEntry;
 	if (!entry) return emptyForm;
@@ -125,12 +156,10 @@ function toFormState(data: V05TodayData | undefined): TodayFormState {
 	return {
 		weight: entry.weight == null ? "" : String(entry.weight),
 		steps: entry.steps == null ? "" : String(entry.steps),
-		sleepHours: sleepDuration == null ? "" : String(Math.floor(sleepDuration / 60)),
-		sleepMinutes: sleepDuration == null ? "" : String(sleepDuration % 60),
+		sleepDuration: formatSleepDurationInput(sleepDuration),
 		bedtime: entry.bedtime?.slice(0, 5) ?? "",
 		wakeTime: entry.wake_time?.slice(0, 5) ?? "",
-		previousDayCalories:
-			entry.previous_day_calories == null ? "" : String(entry.previous_day_calories),
+		calories: entry.previous_day_calories == null ? "" : String(entry.previous_day_calories),
 		workoutActivityType: entry.workout_activity_type ?? "",
 		workoutDurationMinutes:
 			entry.workout_duration_minutes == null ? "" : String(entry.workout_duration_minutes),
@@ -155,24 +184,28 @@ function getChecklistState(data: V05TodayData | undefined) {
 function toDailyEntryInput(
 	form: TodayFormState,
 	workedOut: boolean
-): V05DailyEntryInput {
-	const sleepHours = toNumberOrNull(form.sleepHours) ?? 0;
-	const sleepMinutes = toNumberOrNull(form.sleepMinutes) ?? 0;
-	const hasSleepDuration = form.sleepHours.trim() || form.sleepMinutes.trim();
+): { input: V05DailyEntryInput | null; error: string | null } {
+	const sleepDuration = parseSleepDuration(form.sleepDuration);
+	if (sleepDuration.error) {
+		return { input: null, error: sleepDuration.error };
+	}
 
 	return {
-		weight: toNumberOrNull(form.weight, true),
-		steps: toNumberOrNull(form.steps),
-		sleep_duration_minutes: hasSleepDuration ? sleepHours * 60 + sleepMinutes : null,
-		bedtime: toTimeOrNull(form.bedtime),
-		wake_time: toTimeOrNull(form.wakeTime),
-		previous_day_calories: toNumberOrNull(form.previousDayCalories),
-		worked_out: workedOut,
-		workout_activity_type: workedOut ? form.workoutActivityType.trim() || null : null,
-		workout_duration_minutes: workedOut
-			? toNumberOrNull(form.workoutDurationMinutes)
-			: null,
-		notes: form.notes.trim() || null
+		input: {
+			weight: toNumberOrNull(form.weight, true),
+			steps: toNumberOrNull(form.steps),
+			sleep_duration_minutes: sleepDuration.minutes,
+			bedtime: toTimeOrNull(form.bedtime),
+			wake_time: toTimeOrNull(form.wakeTime),
+			previous_day_calories: toNumberOrNull(form.calories),
+			worked_out: workedOut,
+			workout_activity_type: workedOut ? form.workoutActivityType.trim() || null : null,
+			workout_duration_minutes: workedOut
+				? toNumberOrNull(form.workoutDurationMinutes)
+				: null,
+			notes: form.notes.trim() || null
+		},
+		error: null
 	};
 }
 
@@ -222,6 +255,7 @@ function TodayCheckIn({
 		Partial<Record<V05ChecklistItemKey, boolean>>
 	>(() => getChecklistState(todayData));
 	const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+	const [validationError, setValidationError] = useState<string | null>(null);
 	const dueItems = useMemo(() => getDueChecklistItems(dateKey), [dateKey]);
 	const workedOut = Boolean(checklistState.workout);
 	const isSavingFields = saveDailyEntry.isPending;
@@ -233,6 +267,7 @@ function TodayCheckIn({
 	) {
 		setForm((current) => ({ ...current, [field]: value }));
 		setSaveStatus("idle");
+		setValidationError(null);
 	}
 
 	async function handleChecklistChange(itemKey: V05ChecklistItemKey, completed: boolean) {
@@ -259,9 +294,15 @@ function TodayCheckIn({
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
+		const dailyEntry = toDailyEntryInput(form, workedOut);
+		if (dailyEntry.error || !dailyEntry.input) {
+			setValidationError(dailyEntry.error);
+			setSaveStatus("error");
+			return;
+		}
 
 		try {
-			await saveDailyEntry.mutateAsync(toDailyEntryInput(form, workedOut));
+			await saveDailyEntry.mutateAsync(dailyEntry.input);
 			setSaveStatus("saved");
 		} catch {
 			setSaveStatus("error");
@@ -408,26 +449,14 @@ function TodayCheckIn({
 								/>
 							</label>
 							<label>
-								<FieldLabel icon="sleep">Sleep hours</FieldLabel>
+								<FieldLabel icon="sleep">Sleep</FieldLabel>
 								<input
-									type="number"
+									type="text"
 									inputMode="numeric"
-									min="0"
-									step="1"
-									value={form.sleepHours}
-									onChange={(event) => updateForm("sleepHours", event.target.value)}
-								/>
-							</label>
-							<label>
-								<FieldLabel icon="sleep">Sleep minutes</FieldLabel>
-								<input
-									type="number"
-									inputMode="numeric"
-									min="0"
-									max="59"
-									step="1"
-									value={form.sleepMinutes}
-									onChange={(event) => updateForm("sleepMinutes", event.target.value)}
+									placeholder="HH:MM"
+									aria-label="Sleep"
+									value={form.sleepDuration}
+									onChange={(event) => updateForm("sleepDuration", event.target.value)}
 								/>
 							</label>
 							<label>
@@ -447,16 +476,14 @@ function TodayCheckIn({
 								/>
 							</label>
 							<label>
-								<FieldLabel icon="calories">Yesterday's calories</FieldLabel>
+								<FieldLabel icon="calories">Today's calories</FieldLabel>
 								<input
 									type="number"
 									inputMode="numeric"
 									min="0"
 									step="1"
-									value={form.previousDayCalories}
-									onChange={(event) =>
-										updateForm("previousDayCalories", event.target.value)
-									}
+									value={form.calories}
+									onChange={(event) => updateForm("calories", event.target.value)}
 								/>
 							</label>
 							<label className="wide-field">
@@ -482,7 +509,11 @@ function TodayCheckIn({
 						/>
 					</section>
 
-					{saveStatus === "error" ? (
+					{validationError ? (
+						<p className="form-error" role="alert">
+							{validationError}
+						</p>
+					) : saveStatus === "error" ? (
 						<p className="form-error" role="alert">
 							Your check-in could not save. Please try again.
 						</p>
@@ -522,11 +553,17 @@ function FoodPhotoSection({
 	const [note, setNote] = useState("");
 	const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
 	const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
-	const fileInputId = useId();
+	const galleryInputId = useId();
+	const cameraInputId = useId();
 	const isUploading = uploadFoodPhoto.isPending;
 	const isDeleting = deleteFoodPhoto.isPending;
 	const selectedPhotoIndex = photos.findIndex((photo) => photo.id === selectedPhotoId);
 	const selectedPhoto = selectedPhotoIndex >= 0 ? photos[selectedPhotoIndex] : null;
+
+	function handleFileSelection(nextFile: File | null) {
+		setFile(nextFile);
+		setStatus("idle");
+	}
 
 	async function handleUpload() {
 		if (!file) {
@@ -578,19 +615,33 @@ function FoodPhotoSection({
 				<div className="food-field-card photo-picker-card">
 					<FieldLabel icon="camera">Photo</FieldLabel>
 					<input
-						id={fileInputId}
+						id={galleryInputId}
 						className="native-file-input"
 						type="file"
 						accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*"
 						disabled={!isConfigured || isUploading}
-						onChange={(event) => {
-							setFile(event.target.files?.[0] ?? null);
-							setStatus("idle");
-						}}
+						onChange={(event) => handleFileSelection(event.target.files?.[0] ?? null)}
 					/>
-					<label className="photo-picker-button" htmlFor={fileInputId}>
-						Choose or take photo
-					</label>
+					<input
+						id={cameraInputId}
+						className="native-file-input"
+						type="file"
+						accept="image/*"
+						capture="environment"
+						disabled={!isConfigured || isUploading}
+						onChange={(event) => handleFileSelection(event.target.files?.[0] ?? null)}
+					/>
+					<div className="photo-action-row">
+						<label
+							className="photo-picker-button mobile-photo-action"
+							htmlFor={cameraInputId}
+						>
+							Take photo
+						</label>
+						<label className="photo-picker-button" htmlFor={galleryInputId}>
+							Choose photo
+						</label>
+					</div>
 					<p className={`selected-file-name ${file ? "has-file" : ""}`}>
 						{file ? `Selected: ${file.name}` : "No photo selected yet"}
 					</p>

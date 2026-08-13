@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
+	CalendarDays,
 	ChevronLeft,
 	ChevronRight,
 	ImageOff,
-	PencilLine
+	Pencil
 } from "lucide-react";
 import { PixelIcon } from "../../assets/pixelArt";
 import { getDueChecklistItems } from "./checklist";
@@ -23,6 +24,7 @@ type PhotoContext = {
 	photoId: string;
 	photos: V05FoodPhotoWithUrl[];
 };
+const HISTORY_ENTRY_BATCH_SIZE = 7;
 
 export function HistoryPage() {
 	const todayKey = toLocalDateKey();
@@ -178,7 +180,10 @@ function DailyEntriesHistory({
 	onOpenPhoto: (photo: V05FoodPhotoWithUrl) => void;
 }) {
 	const completionSummary = getCompletionSummary(selectedDateKey, completions);
-	const completedItems = getCompletedChecklistItems(selectedDateKey, completions);
+	const checklistItems = getChecklistItemsForDate(selectedDateKey, completions);
+	const [visibleEntryCount, setVisibleEntryCount] = useState(HISTORY_ENTRY_BATCH_SIZE);
+	const visibleEntries = entries.slice(0, visibleEntryCount);
+	const hasMoreEntries = visibleEntryCount < entries.length;
 
 	return (
 		<div className="history-layout">
@@ -189,21 +194,36 @@ function DailyEntriesHistory({
 				</p>
 				<h3 id="entries-title">Daily entries</h3>
 				{entries.length ? (
-					<div className="entry-list">
-						{entries.map((entry) => (
+					<>
+						<div className="entry-list">
+							{visibleEntries.map((entry) => (
+								<button
+									type="button"
+									key={entry.id}
+									className={`entry-card ${
+										entry.entry_date === selectedDateKey ? "selected" : ""
+									}`}
+									onClick={() => onSelectDate(entry.entry_date)}
+								>
+									<strong>{formatFriendlyDate(entry.entry_date)}</strong>
+									<EntrySummary entry={entry} completions={completions} />
+								</button>
+							))}
+						</div>
+						{hasMoreEntries ? (
 							<button
 								type="button"
-								key={entry.id}
-								className={`entry-card ${
-									entry.entry_date === selectedDateKey ? "selected" : ""
-								}`}
-								onClick={() => onSelectDate(entry.entry_date)}
+								className="show-more-button"
+								onClick={() =>
+									setVisibleEntryCount((count) =>
+										Math.min(count + HISTORY_ENTRY_BATCH_SIZE, entries.length)
+									)
+								}
 							>
-								<strong>{formatFriendlyDate(entry.entry_date)}</strong>
-								<EntrySummary entry={entry} completions={completions} />
+								Show more
 							</button>
-						))}
-					</div>
+						) : null}
+					</>
 				) : (
 					<p className="empty-note">Your first page starts with today's check-in.</p>
 				)}
@@ -218,7 +238,7 @@ function DailyEntriesHistory({
 					>
 						<ChevronLeft aria-hidden="true" size={18} />
 					</button>
-					<label>
+					<label className="history-date-control">
 						<span className="sr-only">Selected history date</span>
 						<input
 							type="date"
@@ -226,6 +246,7 @@ function DailyEntriesHistory({
 							max={todayKey}
 							onChange={(event) => onSelectDate(event.target.value)}
 						/>
+						<CalendarDays aria-hidden="true" size={16} />
 					</label>
 					<button
 						type="button"
@@ -236,58 +257,69 @@ function DailyEntriesHistory({
 						<ChevronRight aria-hidden="true" size={18} />
 					</button>
 				</div>
-				<div className="section-heading compact">
+				<div className="section-heading compact day-page-heading">
 					<div>
 						<p className="eyebrow">{formatFriendlyDate(selectedDateKey)}</p>
 						<h3 id="day-detail-title">Day page</h3>
 					</div>
-					<Link className="text-button" to={`/today?date=${selectedDateKey}`}>
-						<PencilLine aria-hidden="true" size={16} />
+					<Link className="text-button edit-day-link" to={`/today?date=${selectedDateKey}`}>
+						<Pencil aria-hidden="true" size={16} />
 						Edit this day
 					</Link>
 				</div>
 
 				{selectedEntry ? (
-					<div className="day-detail-grid">
-						<Metric label="Weight" value={formatMaybe(selectedEntry.weight, " lb")} />
-						<Metric label="Steps" value={formatMaybe(selectedEntry.steps)} />
-						<Metric
-							label="Sleep"
-							value={
-								selectedEntry.sleep_duration_minutes == null
-									? null
-									: formatSleep(selectedEntry.sleep_duration_minutes)
-							}
-						/>
-						<Metric
-							label="Checklist"
-							value={`${completionSummary.completed}/${completionSummary.total} done`}
-						/>
-						{selectedEntry.worked_out ? (
+					<div className="day-detail-layout">
+						<section
+							className="metric-note checklist-summary-card"
+							aria-labelledby="history-checklist-title"
+						>
+							<span id="history-checklist-title">Checklist</span>
+							<strong>{`${completionSummary.completed}/${completionSummary.total} done`}</strong>
+							<ul className="history-checklist-list" aria-label="Checklist items for selected day">
+								{checklistItems.map((item) => (
+									<li
+										key={item.key}
+										className={item.completed ? "completed" : "incomplete"}
+									>
+										<span className="history-check-symbol" aria-hidden="true">
+											{item.completed ? "✅" : "☐"}
+										</span>
+										<span>{item.label}</span>
+									</li>
+								))}
+							</ul>
+						</section>
+						<div className="day-detail-grid" aria-label="Daily detail summaries">
+							<Metric label="Weight" value={formatMaybe(selectedEntry.weight, " lb")} />
+							<Metric label="Steps" value={formatMaybe(selectedEntry.steps)} />
 							<Metric
-								label="Workout"
-								value={selectedEntry.workout_activity_type ?? "Completed"}
+								label="Sleep"
+								value={
+									selectedEntry.sleep_duration_minutes == null
+										? null
+										: formatSleep(selectedEntry.sleep_duration_minutes)
+								}
 							/>
-						) : null}
-						{selectedEntry.notes ? <Metric label="Note" value={selectedEntry.notes} /> : null}
+							<Metric
+								label="Calories"
+								value={formatMaybe(selectedEntry.previous_day_calories)}
+							/>
+							<Metric label="Bedtime" value={formatTime(selectedEntry.bedtime)} />
+							<Metric label="Wake-up" value={formatTime(selectedEntry.wake_time)} />
+							{selectedEntry.worked_out ? (
+								<Metric
+									label="Workout"
+									value={selectedEntry.workout_activity_type ?? "Completed"}
+									secondary={formatDuration(selectedEntry.workout_duration_minutes)}
+								/>
+							) : null}
+							{selectedEntry.notes ? <Metric label="Note" value={selectedEntry.notes} /> : null}
+						</div>
 					</div>
 				) : (
 					<p className="empty-note">No saved page for this date yet.</p>
 				)}
-				{selectedEntry ? (
-					<div className="completed-checklist-summary" aria-label="Completed checklist items">
-						{completedItems.length ? (
-							completedItems.map((item) => (
-								<span key={item.key} className="completed-chip">
-									<PixelIcon name="completed" aria-hidden="true" />
-									{item.label}
-								</span>
-							))
-						) : (
-							<p className="mini-note">No checklist items completed.</p>
-						)}
-					</div>
-				) : null}
 
 				{selectedDayPhotos.length ? (
 					<div className="day-photo-strip" aria-label="Food photos for selected day">
@@ -332,9 +364,6 @@ function FoodGallery({
 					<p className="eyebrow">Scrapbook</p>
 					<h3 id="gallery-title">Food gallery</h3>
 				</div>
-				<span className="section-pixel-icon" aria-hidden="true">
-					<PixelIcon name="camera" />
-				</span>
 			</div>
 			{photos.length ? (
 				<div className="scrapbook-grid food-gallery-grid" aria-label="Food photo gallery">
@@ -393,13 +422,22 @@ function EntrySummary({
 	);
 }
 
-function Metric({ label, value }: { label: string; value: string | null }) {
+function Metric({
+	label,
+	value,
+	secondary
+}: {
+	label: string;
+	value: string | null;
+	secondary?: string | null;
+}) {
 	if (!value) return null;
 
 	return (
 		<div className="metric-note">
 			<span>{label}</span>
 			<strong>{value}</strong>
+			{secondary ? <small className="metric-secondary">{secondary}</small> : null}
 		</div>
 	);
 }
@@ -418,22 +456,39 @@ function getCompletionSummary(dateKey: string, completions: V05ChecklistCompleti
 	};
 }
 
-function getCompletedChecklistItems(dateKey: string, completions: V05ChecklistCompletion[]) {
+function getChecklistItemsForDate(dateKey: string, completions: V05ChecklistCompletion[]) {
 	const completedKeys = new Set(
 		completions
 			.filter((completion) => completion.entry_date === dateKey && completion.completed)
 			.map((completion) => completion.item_key)
 	);
 
-	return getDueChecklistItems(dateKey).filter((item) => completedKeys.has(item.key));
+	return getDueChecklistItems(dateKey).map((item) => ({
+		...item,
+		completed: completedKeys.has(item.key)
+	}));
 }
 
 function formatMaybe(value: number | null, suffix = "") {
 	return value == null ? null : `${value.toLocaleString()}${suffix}`;
 }
 
+function formatTime(value: string | null) {
+	return value ? value.slice(0, 5) : null;
+}
+
 function formatSleep(minutes: number) {
 	const hours = Math.floor(minutes / 60);
 	const remainder = minutes % 60;
 	return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+}
+
+function formatDuration(minutes: number | null) {
+	if (minutes == null) return null;
+	const hours = Math.floor(minutes / 60);
+	const remainder = minutes % 60;
+
+	if (hours && remainder) return `${hours} hr ${remainder} min`;
+	if (hours) return `${hours} hr`;
+	return `${remainder} min`;
 }

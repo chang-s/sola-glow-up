@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, CircleDot } from "lucide-react";
 import { PixelIcon } from "../../assets/pixelArt";
-import type { PixelIconName } from "../../assets/pixelArtAssets";
 import { formatFriendlyDate } from "./date";
 import {
 	buildWeightChartModel,
@@ -55,14 +54,12 @@ export function ProgressPage() {
 						value={formatWeight(summary.starting?.weight ?? null)}
 						detail={formatSummaryDate(summary.starting)}
 						accent="rose"
-						icon="weight"
 					/>
 					<SummaryCard
 						label="Latest"
 						value={formatWeight(summary.latest?.weight ?? null)}
 						detail={formatSummaryDate(summary.latest)}
 						accent="butter"
-						icon="weight"
 					/>
 					<SummaryCard
 						label="Total change"
@@ -78,7 +75,6 @@ export function ProgressPage() {
 						}
 						tone={summary.change == null ? undefined : summary.change <= 0 ? "positive" : "warm"}
 						accent="green"
-						icon="weightTrend"
 					/>
 				</section>
 
@@ -93,9 +89,6 @@ export function ProgressPage() {
 						</div>
 						<div className="chart-heading-actions">
 							<ChartModeToggle mode={chartMode} onChange={setChartMode} />
-							<span className="section-pixel-icon decorative-chart-icon" aria-hidden="true">
-								<PixelIcon name="weightTrend" uiSize="medium" />
-							</span>
 						</div>
 					</div>
 
@@ -153,22 +146,17 @@ function SummaryCard({
 	value,
 	detail,
 	tone,
-	accent,
-	icon
+	accent
 }: {
 	label: string;
 	value: string;
 	detail: string;
 	tone?: "positive" | "warm";
 	accent: "rose" | "butter" | "green";
-	icon: PixelIconName;
 }) {
 	return (
 		<div className={tone ? `metric-card ${tone}` : "metric-card"}>
 			<i className={`metric-card-tab ${accent}`} aria-hidden="true" />
-			<span className="metric-pixel-icon" aria-hidden="true">
-				<PixelIcon name={icon} uiSize="tiny" />
-			</span>
 			<span>{label}</span>
 			<strong>{value}</strong>
 			<small>{detail}</small>

@@ -90,7 +90,11 @@ describe("V0.5 History page", () => {
 					steps: 7500,
 					sleep_duration_minutes: 435,
 					worked_out: true,
-					workout_activity_type: "Walk"
+					workout_activity_type: "Walk",
+					workout_duration_minutes: 35,
+					bedtime: "23:30:00",
+					wake_time: "06:45:00",
+					previous_day_calories: 1900
 				})
 			],
 			checklistCompletions: [
@@ -110,10 +114,21 @@ describe("V0.5 History page", () => {
 		expect(card).toHaveTextContent("7h 15m");
 		expect(card).toHaveTextContent("Workout: Walk");
 		expect(card).toHaveTextContent("1/8 checks");
-		expect(screen.getByLabelText("Completed checklist items")).toHaveTextContent("Vitamins");
-		expect(screen.getByLabelText("Completed checklist items")).not.toHaveTextContent(
-			"Morning Skincare"
+		expect(screen.getByText("1/8 done")).toBeInTheDocument();
+		const checklist = screen.getByLabelText("Checklist items for selected day");
+		expect(checklist).toHaveTextContent("Morning Skincare");
+		expect(checklist).toHaveTextContent("Vitamins");
+		expect(checklist).toHaveTextContent("✅");
+		expect(checklist).toHaveTextContent("☐");
+		expect(within(checklist).getByText("Vitamins").closest("li")).toHaveClass("completed");
+		expect(within(checklist).getByText("Morning Skincare").closest("li")).toHaveClass(
+			"incomplete"
 		);
+		expect(screen.getByLabelText("Daily detail summaries")).toHaveTextContent("35 min");
+		expect(screen.getByLabelText("Daily detail summaries")).toHaveTextContent("Calories");
+		expect(screen.getByLabelText("Daily detail summaries")).toHaveTextContent("1,900");
+		expect(screen.getByLabelText("Daily detail summaries")).toHaveTextContent("23:30");
+		expect(screen.getByLabelText("Daily detail summaries")).toHaveTextContent("06:45");
 	});
 
 	it("shows a neutral state when no checklist items were completed", () => {
@@ -122,8 +137,54 @@ describe("V0.5 History page", () => {
 			checklistCompletions: []
 		});
 
-		expect(screen.getByText("No checklist items completed.")).toBeInTheDocument();
 		expect(screen.getByText("0/8 done")).toBeInTheDocument();
+		const checklist = screen.getByLabelText("Checklist items for selected day");
+		expect(checklist).toHaveTextContent("Morning Skincare");
+		expect(checklist).toHaveTextContent("iRestore Mask");
+		expect(checklist).toHaveTextContent("☐");
+		expect(within(checklist).getAllByRole("listitem")).toHaveLength(8);
+		expect(within(checklist).getByText("Morning Skincare").closest("li")).toHaveClass(
+			"incomplete"
+		);
+	});
+
+	it("does not fabricate workout duration when a historical workout has none", () => {
+		renderHistory({
+			dailyEntries: [
+				dailyEntry("2026-08-12", {
+					worked_out: true,
+					workout_activity_type: "Treadmill",
+					workout_duration_minutes: null
+				})
+			]
+		});
+
+		const details = screen.getByLabelText("Daily detail summaries");
+		expect(details).toHaveTextContent("Treadmill");
+		expect(details).not.toHaveTextContent("min");
+		expect(details).not.toHaveTextContent("hr");
+	});
+
+	it("reveals Daily Entries in batches of seven with Show more", () => {
+		const entries = Array.from({ length: 16 }, (_, index) =>
+			dailyEntry(`2026-07-${String(31 - index).padStart(2, "0")}`)
+		);
+
+		const { container } = renderHistory({ dailyEntries: entries });
+
+		expect(container.querySelectorAll(".entry-card")).toHaveLength(7);
+		expect(screen.getByText("Fri, Jul 31")).toBeInTheDocument();
+		expect(screen.queryByText("Fri, Jul 24")).not.toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Show more" }));
+		expect(container.querySelectorAll(".entry-card")).toHaveLength(14);
+		expect(screen.getByText("Fri, Jul 24")).toBeInTheDocument();
+		expect(screen.queryByText("Fri, Jul 17")).not.toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Show more" }));
+		expect(container.querySelectorAll(".entry-card")).toHaveLength(16);
+		expect(screen.getByText("Fri, Jul 17")).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
 	});
 
 	it("supports selected-day navigation and future-day protection", () => {
@@ -149,7 +210,7 @@ describe("V0.5 History page", () => {
 	});
 
 	it("shows active food photos newest-first and excludes soft-deleted fixtures", () => {
-		renderHistory({
+		const { container } = renderHistory({
 			foodPhotos: [
 				{
 					id: "photo-new",
@@ -175,6 +236,8 @@ describe("V0.5 History page", () => {
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: "Food Gallery" }));
+		const galleryHeading = container.querySelector("#gallery-title")?.closest(".section-heading");
+		expect(galleryHeading).not.toContainElement(container.querySelector(".section-pixel-icon"));
 		const gallery = screen.getByLabelText("Food photo gallery");
 		const cards = within(gallery).getAllByRole("button");
 
@@ -392,5 +455,23 @@ describe("V0.5 History page", () => {
 		expect(css).toContain("\tobject-fit: contain;");
 		expect(css).toContain(".photo-thumb-button img {\n\twidth: 100%;\n\theight: 100%;\n\timage-rendering: auto;");
 		expect(css).toContain(".food-photo-frame img,\n.photo-dialog-image img {\n\twidth: 100%;\n\theight: 100%;\n\timage-rendering: auto;");
+	});
+
+	it("keeps History detail controls compact and top-aligned", () => {
+		expect(css).toContain(".history-layout {\n\tgrid-template-columns: minmax(16rem, 0.7fr) minmax(0, 1fr);\n\talign-items: start;");
+		expect(css).toContain(".notebook-panel,\n.scrapbook-panel {\n\tdisplay: grid;");
+		expect(css).toContain("\talign-content: start;");
+		expect(css).toContain(".day-picker {\n\tdisplay: inline-flex;");
+		expect(css).toContain(".day-detail-layout {\n\tdisplay: grid;");
+		expect(css).toContain(".day-detail-grid {\n\tdisplay: flex;");
+		expect(css).toContain(".metric-note {\n\tdisplay: grid;\n\tflex: 0 1 12rem;");
+		expect(css).toContain(".entry-chip-row small,\n.photo-note-preview {");
+		expect(css).toContain("\tfont-weight: 400;");
+		expect(css).toContain(".edit-day-link,\n.edit-day-link *,");
+		expect(css).toContain(".section-heading.day-page-heading {\n\tjustify-content: space-between;");
+		expect(css).toContain(".metric-note > span {");
+		expect(css).toContain(".metric-secondary {");
+		expect(css).toContain(".history-checklist-list li {\n\tdisplay: flex;");
+		expect(css).toContain("\tfont-weight: 400;");
 	});
 });

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import css from "../../styles/global.css?raw";
 import { TodayPage } from "./TodayPage";
 import type { V05FoodPhotoWithUrl, V05MotivationData, V05TodayData } from "./types";
 
@@ -160,11 +161,10 @@ describe("V0.5 Today page", () => {
 
 		expect(screen.getByLabelText(/Weight/)).toHaveValue(182.4);
 		expect(screen.getByLabelText("Steps")).toHaveValue(8123);
-		expect(screen.getByLabelText("Sleep hours")).toHaveValue(7);
-		expect(screen.getByLabelText("Sleep minutes")).toHaveValue(35);
+		expect(screen.getByLabelText("Sleep")).toHaveValue("07:35");
 		expect(screen.getByLabelText("Bedtime")).toHaveValue("23:10");
 		expect(screen.getByLabelText("Wake-up time")).toHaveValue("06:45");
-		expect(screen.getByLabelText("Yesterday's calories")).toHaveValue(1840);
+		expect(screen.getByLabelText("Today's calories")).toHaveValue(1840);
 		expect(screen.getByLabelText("Activity type")).toHaveValue("Walk");
 		expect(screen.getByLabelText(/Duration/)).toHaveValue(35);
 		expect(screen.getByLabelText("Tiny note")).toHaveValue("cozy start");
@@ -196,17 +196,16 @@ describe("V0.5 Today page", () => {
 		});
 	});
 
-	it("saves daily input edits with user-friendly sleep minutes", async () => {
+	it("saves daily input edits with user-friendly sleep duration", async () => {
 		renderToday();
 		setEntryDate("2026-08-12");
 
 		fireEvent.change(screen.getByLabelText(/Weight/), { target: { value: "181.6" } });
 		fireEvent.change(screen.getByLabelText("Steps"), { target: { value: "7500" } });
-		fireEvent.change(screen.getByLabelText("Sleep hours"), { target: { value: "7" } });
-		fireEvent.change(screen.getByLabelText("Sleep minutes"), { target: { value: "15" } });
+		fireEvent.change(screen.getByLabelText("Sleep"), { target: { value: "07:15" } });
 		fireEvent.change(screen.getByLabelText("Bedtime"), { target: { value: "23:30" } });
 		fireEvent.change(screen.getByLabelText("Wake-up time"), { target: { value: "06:45" } });
-		fireEvent.change(screen.getByLabelText("Yesterday's calories"), {
+		fireEvent.change(screen.getByLabelText("Today's calories"), {
 			target: { value: "1900" }
 		});
 		fireEvent.change(screen.getByLabelText("Tiny note"), {
@@ -231,6 +230,31 @@ describe("V0.5 Today page", () => {
 				}
 			});
 		});
+	});
+
+	it("does not save malformed sleep duration values", async () => {
+		renderToday();
+		setEntryDate("2026-08-12");
+
+		fireEvent.change(screen.getByLabelText("Sleep"), { target: { value: "7.5" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save today's check-in" }));
+
+		expect(
+			await screen.findByText("Enter sleep as HH:MM, like 07:30.")
+		).toBeInTheDocument();
+		expect(mockSaveDailyEntry).not.toHaveBeenCalled();
+	});
+
+	it("does not save sleep durations with invalid minutes", async () => {
+		renderToday();
+		setEntryDate("2026-08-12");
+
+		fireEvent.change(screen.getByLabelText("Sleep"), { target: { value: "07:75" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save today's check-in" }));
+
+		expect(await screen.findByText("Sleep minutes must be between 00 and 59."))
+			.toBeInTheDocument();
+		expect(mockSaveDailyEntry).not.toHaveBeenCalled();
 	});
 
 	it("reveals workout details only when Worked Out is checked", async () => {
@@ -321,7 +345,7 @@ describe("V0.5 Today page", () => {
 
 		expect(screen.getByLabelText(/Weight/)).toHaveValue(183.2);
 		expect(screen.getByLabelText("Steps")).toHaveValue(6400);
-		expect(screen.getByLabelText("Sleep hours")).toHaveValue(7);
+		expect(screen.getByLabelText("Sleep")).toHaveValue("07:00");
 		expect(screen.getByLabelText("Morning Skincare")).toBeChecked();
 		expect(screen.queryByLabelText("Iron")).not.toBeInTheDocument();
 	});
@@ -332,13 +356,19 @@ describe("V0.5 Today page", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: /2026-08-11/ }));
 		fireEvent.change(screen.getByLabelText(/Weight/), { target: { value: "183" } });
+		fireEvent.change(screen.getByLabelText("Today's calories"), {
+			target: { value: "1888" }
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Save today's check-in" }));
 
 		await waitFor(() => {
 			expect(mockSaveDailyEntry).toHaveBeenCalledWith(
 				expect.objectContaining({
 					dateKey: "2026-08-11",
-					input: expect.objectContaining({ weight: 183 })
+					input: expect.objectContaining({
+						weight: 183,
+						previous_day_calories: 1888
+					})
 				})
 			);
 		});
@@ -370,7 +400,9 @@ describe("V0.5 Today page", () => {
 		expect(container.querySelector(".today-mascot")).not.toBeInTheDocument();
 		expect(screen.getByLabelText(/Weight/)).toBeInTheDocument();
 		expect(screen.getByLabelText("Steps")).toBeInTheDocument();
-		expect(screen.getByLabelText("Yesterday's calories")).toBeInTheDocument();
+		expect(screen.getByLabelText("Sleep")).toHaveAttribute("placeholder", "HH:MM");
+		expect(screen.queryByText("HH:MM")).not.toBeInTheDocument();
+		expect(screen.getByLabelText("Today's calories")).toBeInTheDocument();
 	});
 
 	it("renders Today as checklist, daily details, and food scrapbook sections", () => {
@@ -386,15 +418,24 @@ describe("V0.5 Today page", () => {
 	it("uses styled food upload controls while keeping the real file input accessible", () => {
 		const { container } = renderToday();
 		const file = new File(["tiny"], "somi-photo.jpg", { type: "image/jpeg" });
-		const fileInput = screen.getByLabelText("Choose or take photo");
+		const fileInput = screen.getByLabelText("Choose photo");
+		const cameraInput = screen.getByLabelText("Take photo");
 
 		expect(fileInput).toHaveAttribute("type", "file");
 		expect(fileInput).toHaveAttribute("accept", expect.stringContaining("image/*"));
-		expect(container.querySelector(".photo-picker-button")).toHaveTextContent(
-			"Choose or take photo"
-		);
+		expect(cameraInput).toHaveAttribute("type", "file");
+		expect(cameraInput).toHaveAttribute("accept", "image/*");
+		expect(cameraInput).toHaveAttribute("capture", "environment");
+		expect(container.querySelector(".photo-action-row")).toHaveTextContent("Take photo");
+		expect(container.querySelector(".photo-action-row")).toHaveTextContent("Choose photo");
 		expect(container.querySelector(".photo-picker-button .pixel-art-icon"))
 			.not.toBeInTheDocument();
+		expect(screen.getByText("No photo selected yet")).toHaveClass("selected-file-name");
+		expect(css).toContain(".selected-file-name {\n\tmargin: 0;");
+		expect(css).toContain("\tfont-style: italic;");
+		expect(css).toContain("\tfont-weight: 400;");
+		expect(css).toContain("\ttext-align: center;");
+		expect(css).toContain(".food-upload-button {\n\tjustify-self: start;\n\tfont-weight: 400;");
 
 		fireEvent.change(fileInput, { target: { files: [file] } });
 

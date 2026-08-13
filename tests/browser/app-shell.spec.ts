@@ -205,12 +205,12 @@ test("wraps Today detail grids within the clipboard at intermediate widths", asy
 									<div class="board-clip"></div>
 									<section class="checkin-section daily-details-section">
 										<div class="daily-input-grid">
-											${["Weight", "Steps", "Sleep Hours", "Sleep Minutes", "Bedtime", "Wake-up Time", "Yesterday's Calories", "Tiny Note"].map((label) => `<label><span class="field-label">${label}</span><input /></label>`).join("")}
+											${["Weight", "Steps", "Sleep", "Bedtime", "Wake-up Time", "Today's Calories", "Tiny Note"].map((label) => `<label><span class="field-label">${label}</span><input /></label>`).join("")}
 										</div>
 									</section>
 									<section class="checkin-section food-photo-preview">
 										<div class="food-upload-grid">
-											<div class="food-field-card"><span class="field-label">Photo</span><label class="photo-picker-button">Choose or take photo</label></div>
+											<div class="food-field-card"><span class="field-label">Photo</span><div class="photo-action-row"><label class="photo-picker-button mobile-photo-action">Take photo</label><label class="photo-picker-button">Choose photo</label></div></div>
 											<label class="food-field-card"><span class="field-label">Meal type</span><select></select></label>
 											<label class="food-field-card"><span class="field-label">Food note</span><input /></label>
 										</div>
@@ -233,7 +233,7 @@ test("wraps Today detail grids within the clipboard at intermediate widths", asy
 		const foodItems = [...document.querySelectorAll(".food-upload-grid > *")].map((item) =>
 			item.getBoundingClientRect()
 		);
-		const button = document.querySelector(".photo-picker-button")!;
+		const button = document.querySelector(".photo-picker-button:not(.mobile-photo-action)")!;
 
 		return {
 			boardLeft: board.left,
@@ -248,15 +248,159 @@ test("wraps Today detail grids within the clipboard at intermediate widths", asy
 				(item) => item.left < board.left - 1 || item.right > board.right + 1
 			),
 			photoButtonText: button.textContent?.trim(),
-			photoButtonWhiteSpace: getComputedStyle(button).whiteSpace
+			photoButtonWhiteSpace: getComputedStyle(button).whiteSpace,
+			sleepRowHeight: detailItems[2].height,
+			weightRowHeight: detailItems[0].height,
+			stepsRowHeight: detailItems[1].height
 		};
 	});
 
 	expect(metrics.overflows).toBe(false);
 	expect(metrics.detailColumnsFirstRow).toBeLessThanOrEqual(3);
 	expect(metrics.foodColumnsFirstRow).toBeLessThanOrEqual(3);
-	expect(metrics.photoButtonText).toBe("Choose or take photo");
+	expect(metrics.photoButtonText).toBe("Choose photo");
 	expect(metrics.photoButtonWhiteSpace).toBe("nowrap");
+	expect(metrics.sleepRowHeight).toBeCloseTo(metrics.weightRowHeight, 1);
+	expect(metrics.sleepRowHeight).toBeCloseTo(metrics.stepsRowHeight, 1);
+});
+
+test("keeps History day page content top-aligned with compact controls", async ({
+	page
+}) => {
+	const css = readFileSync(resolve("src/styles/global.css"), "utf8");
+	await page.setViewportSize({ width: 1180, height: 760 });
+	await page.setContent(`
+		<!doctype html>
+		<html>
+			<head>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+				<style>${css}</style>
+			</head>
+			<body>
+				<section class="v05-screen">
+					<div class="history-layout">
+						<section class="pixel-card notebook-panel">
+							<p class="eyebrow icon-eyebrow">Past pages</p>
+							<h3>Daily entries</h3>
+							<div class="entry-list">
+								${Array.from({ length: 9 }, (_, index) => `
+									<button class="entry-card${index === 0 ? " selected" : ""}" type="button">
+										<strong>Wed, Aug ${12 - index}</strong>
+										<span class="entry-chip-row"><small>201.${index} lb</small><small>${6 - (index % 3)}/8 checks</small></span>
+									</button>
+								`).join("")}
+							</div>
+							<button class="show-more-button" type="button">Show more</button>
+						</section>
+						<section class="pixel-card scrapbook-panel">
+							<div class="day-picker">
+								<button type="button" aria-label="Previous day">&lt;</button>
+								<label class="history-date-control"><input type="date" value="2026-08-12" /><svg></svg></label>
+								<button type="button" aria-label="Next day">&gt;</button>
+							</div>
+							<div class="section-heading compact day-page-heading"><div><p class="eyebrow">Wed, Aug 12</p><h3>Day page</h3></div><a class="text-button edit-day-link" href="/today?date=2026-08-12"><svg></svg>Edit this day</a></div>
+							<div class="day-detail-layout">
+								<section class="metric-note checklist-summary-card"><span>Checklist</span><strong>2/8 done</strong><ul class="history-checklist-list"><li class="completed"><span class="history-check-symbol">✅</span><span>Vitamins</span></li><li class="incomplete"><span class="history-check-symbol">☐</span><span>Workout</span></li></ul></section>
+								<div class="day-detail-grid">
+									<div class="metric-note"><span>Weight</span><strong>201.4 lb</strong></div>
+									<div class="metric-note"><span>Workout</span><strong>Treadmill</strong><small class="metric-secondary">30 min</small></div>
+								</div>
+							</div>
+						</section>
+					</div>
+				</section>
+			</body>
+		</html>
+	`);
+
+	const sparse = await page.evaluate(() => {
+		const panel = document.querySelector(".scrapbook-panel")!.getBoundingClientRect();
+		const picker = document.querySelector(".day-picker")!.getBoundingClientRect();
+		const heading = document.querySelector(".day-page-heading")!.getBoundingClientRect();
+		const headingTitle = document.querySelector(".day-page-heading h3")!.getBoundingClientRect();
+		const checklist = document.querySelector(".checklist-summary-card")!.getBoundingClientRect();
+		const card = document.querySelector(".day-detail-grid .metric-note")!.getBoundingClientRect();
+		const input = document.querySelector(".history-date-control input")!.getBoundingClientRect();
+		const previous = document.querySelector("[aria-label='Previous day']")!.getBoundingClientRect();
+		const next = document.querySelector("[aria-label='Next day']")!.getBoundingClientRect();
+		const entryChip = document.querySelector(".entry-chip-row small")!;
+		const checklistItem = document.querySelector(".history-checklist-list li span:last-child")!;
+		const editIcon = document.querySelector(".edit-day-link svg")!;
+		const editLink = document.querySelector(".edit-day-link")!;
+		const workoutName = document.querySelector(".day-detail-grid .metric-note:nth-child(2) strong")!;
+		const workoutDuration = document.querySelector(".metric-secondary")!;
+		return {
+			panelTop: panel.top,
+			pickerTop: picker.top,
+			headingTop: heading.top,
+			pickerCenterOffset: Math.abs(
+				picker.left + picker.width / 2 - (panel.left + panel.width / 2)
+			),
+			headingLeftOffset: headingTitle.left - panel.left,
+			checklistLeft: checklist.left,
+			cardLeft: card.left,
+			checklistWidth: checklist.width,
+			cardWidth: card.width,
+			pickerWidth: picker.width,
+			inputWidth: input.width,
+			previousGap: input.left - previous.right,
+			nextGap: next.left - input.right,
+			entryChipWeight: getComputedStyle(entryChip).fontWeight,
+			checklistItemWeight: getComputedStyle(checklistItem).fontWeight,
+			checklistItemTransform: getComputedStyle(checklistItem).textTransform,
+			editIconDecoration: getComputedStyle(editIcon).textDecorationLine,
+			editLinkDecoration: getComputedStyle(editLink).textDecorationLine,
+			workoutNameWeight: getComputedStyle(workoutName).fontWeight,
+			workoutDurationWeight: getComputedStyle(workoutDuration).fontWeight
+		};
+	});
+
+	await page.locator(".day-detail-grid").evaluate((grid) => {
+		grid.innerHTML = Array.from({ length: 8 }, (_, index) => `
+			<div class="metric-note"><span>Metric ${index + 1}</span><strong>Value ${index + 1}</strong></div>
+		`).join("");
+	});
+	await page.locator(".checklist-summary-card .history-checklist-list").evaluate((list) => {
+		list.innerHTML = Array.from({ length: 8 }, (_, index) => `
+			<li class="${index < 6 ? "completed" : "incomplete"}"><span class="history-check-symbol">${index < 6 ? "✅" : "☐"}</span><span>Checklist ${index + 1}</span></li>
+		`).join("");
+	});
+
+	const dense = await page.evaluate(() => {
+		const heading = document.querySelector(".day-page-heading")!.getBoundingClientRect();
+		const cards = [...document.querySelectorAll(".day-detail-grid .metric-note")].map((item) =>
+			item.getBoundingClientRect()
+		);
+		const panel = document.querySelector(".scrapbook-panel")!.getBoundingClientRect();
+		return {
+			headingTop: heading.top,
+			maxCardWidth: Math.max(...cards.map((card) => card.width)),
+			allCardsInsidePanel: cards.every(
+				(card) => card.left >= panel.left && card.right <= panel.right
+			)
+		};
+	});
+
+	expect(sparse.pickerTop - sparse.panelTop).toBeLessThan(32);
+	expect(dense.headingTop).toBeCloseTo(sparse.headingTop, 1);
+	expect(sparse.pickerCenterOffset).toBeLessThan(2);
+	expect(sparse.headingLeftOffset).toBeLessThan(32);
+	expect(sparse.checklistLeft).toBeLessThan(sparse.cardLeft);
+	expect(sparse.checklistWidth).toBeGreaterThanOrEqual(220);
+	expect(sparse.cardWidth).toBeLessThanOrEqual(260);
+	expect(dense.maxCardWidth).toBeLessThanOrEqual(260);
+	expect(dense.allCardsInsidePanel).toBe(true);
+	expect(sparse.pickerWidth).toBeLessThan(260);
+	expect(sparse.inputWidth).toBeLessThan(180);
+	expect(sparse.previousGap).toBeLessThan(8);
+	expect(sparse.nextGap).toBeLessThan(8);
+	expect(sparse.entryChipWeight).toBe("400");
+	expect(sparse.checklistItemWeight).toBe("400");
+	expect(sparse.checklistItemTransform).toBe("none");
+	expect(sparse.editIconDecoration).toBe("none");
+	expect(sparse.editLinkDecoration).toBe("none");
+	expect(Number(sparse.workoutNameWeight)).toBeGreaterThan(600);
+	expect(sparse.workoutDurationWeight).toBe("400");
 });
 
 test("keeps photo viewer navigation outside the dialog image on desktop", async ({
@@ -273,7 +417,7 @@ test("keeps photo viewer navigation outside the dialog image on desktop", async 
 			</head>
 			<body>
 				<div class="modal-backdrop">
-					<div class="photo-dialog-shell">
+					<div class="photo-dialog-shell with-navigation">
 						<button class="photo-dialog-arrow previous" type="button">&lt;</button>
 						<section class="photo-dialog" role="dialog" aria-modal="true">
 							<div class="section-heading compact"><h3>Food photo</h3></div>
@@ -334,6 +478,129 @@ test("keeps photo viewer navigation outside the dialog image on desktop", async 
 	expect(portrait.nextOverlapsImage).toBe(false);
 	expect(portrait.previousY).toBeCloseTo(landscape.previousY, 1);
 	expect(portrait.nextY).toBeCloseTo(landscape.nextY, 1);
+});
+
+test("keeps single-photo viewer from collapsing on desktop and mobile", async ({
+	page
+}) => {
+	const css = readFileSync(resolve("src/styles/global.css"), "utf8");
+	for (const viewport of [
+		{ width: 1280, height: 820 },
+		{ width: 390, height: 844 }
+	]) {
+		await page.setViewportSize(viewport);
+		await page.setContent(`
+			<!doctype html>
+			<html>
+				<head>
+					<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+					<style>${css}</style>
+				</head>
+				<body>
+					<div class="modal-backdrop">
+						<div class="photo-dialog-shell single-photo">
+							<section class="photo-dialog" role="dialog" aria-modal="true">
+								<div class="section-heading compact"><h3>Food photo</h3><button class="text-button">Close</button></div>
+								<div class="photo-dialog-viewer">
+									<div class="photo-dialog-image">
+										<img class="detail-photo-image" alt="Portrait meal" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='1000'%3E%3Crect width='600' height='1000' fill='%23f7a7b8'/%3E%3C/svg%3E" />
+									</div>
+								</div>
+							</section>
+						</div>
+					</div>
+				</body>
+			</html>
+		`);
+
+		const portrait = await page.evaluate(() => {
+			const dialog = document.querySelector(".photo-dialog")!.getBoundingClientRect();
+			const image = document.querySelector(".photo-dialog-image")!.getBoundingClientRect();
+			const img = document.querySelector(".detail-photo-image")!.getBoundingClientRect();
+			return {
+				dialogWidth: dialog.width,
+				imageWidth: image.width,
+				imageHeight: image.height,
+				renderedImageWidth: img.width,
+				renderedImageHeight: img.height,
+				overflowsX: dialog.left < 0 || dialog.right > window.innerWidth
+			};
+		});
+
+		await page.locator(".detail-photo-image").evaluate((image) => {
+			image.setAttribute(
+				"src",
+				"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='700'%3E%3Crect width='1200' height='700' fill='%239fd3d2'/%3E%3C/svg%3E"
+			);
+		});
+
+		const landscape = await page.evaluate(() => {
+			const image = document.querySelector(".photo-dialog-image")!.getBoundingClientRect();
+			const img = document.querySelector(".detail-photo-image")!.getBoundingClientRect();
+			return {
+				imageWidth: image.width,
+				imageHeight: image.height,
+				renderedImageWidth: img.width,
+				renderedImageHeight: img.height
+			};
+		});
+
+		expect(portrait.dialogWidth).toBeGreaterThan(viewport.width < 500 ? 300 : 600);
+		expect(portrait.imageWidth).toBeGreaterThan(280);
+		expect(portrait.imageHeight).toBeGreaterThan(180);
+		expect(portrait.renderedImageWidth).toBeLessThanOrEqual(portrait.imageWidth + 1);
+		expect(portrait.renderedImageHeight).toBeLessThanOrEqual(portrait.imageHeight + 1);
+		expect(portrait.overflowsX).toBe(false);
+		expect(landscape.renderedImageWidth).toBeLessThanOrEqual(landscape.imageWidth + 1);
+		expect(landscape.renderedImageHeight).toBeLessThanOrEqual(landscape.imageHeight + 1);
+	}
+});
+
+test("renders distinct mobile camera and gallery photo actions", async ({ page }) => {
+	const css = readFileSync(resolve("src/styles/global.css"), "utf8");
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setContent(`
+		<!doctype html>
+		<html>
+			<head>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+				<style>${css}</style>
+			</head>
+			<body>
+				<div class="food-field-card photo-picker-card">
+					<span class="field-label">Photo</span>
+					<input id="camera" class="native-file-input" type="file" accept="image/*" capture="environment" />
+					<input id="gallery" class="native-file-input" type="file" accept="image/*" />
+					<div class="photo-action-row">
+						<label class="photo-picker-button mobile-photo-action" for="camera">Take photo</label>
+						<label class="photo-picker-button" for="gallery">Choose photo</label>
+					</div>
+				</div>
+			</body>
+		</html>
+	`);
+
+	const actions = await page.evaluate(() => {
+		const take = document.querySelector(".mobile-photo-action")!;
+		const choose = document.querySelector(".photo-picker-button:not(.mobile-photo-action)")!;
+		const camera = document.querySelector<HTMLInputElement>("#camera")!;
+		const gallery = document.querySelector<HTMLInputElement>("#gallery")!;
+		return {
+			takeDisplay: getComputedStyle(take).display,
+			chooseDisplay: getComputedStyle(choose).display,
+			cameraCapture: camera.getAttribute("capture"),
+			cameraAccept: camera.getAttribute("accept"),
+			galleryCapture: gallery.getAttribute("capture"),
+			galleryAccept: gallery.getAttribute("accept")
+		};
+	});
+
+	expect(actions.takeDisplay).not.toBe("none");
+	expect(actions.chooseDisplay).not.toBe("none");
+	expect(actions.cameraCapture).toBe("environment");
+	expect(actions.cameraAccept).toBe("image/*");
+	expect(actions.galleryCapture).toBeNull();
+	expect(actions.galleryAccept).toBe("image/*");
 });
 
 test("contains Progress chart overflow by mode at narrow widths", async ({ page }) => {
