@@ -3,7 +3,9 @@ import { setTimeout as delay } from "node:timers/promises";
 
 const host = "127.0.0.1";
 const port = "4173";
-const baseUrl = `http://${host}:${port}`;
+const basePath = process.env.VITE_BASE_PATH ?? "/sola-glow-up/";
+const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
+const baseUrl = `http://${host}:${port}${normalizedBasePath}`;
 
 function runNodeScript(scriptPath, args, options = {}) {
 	return spawn(process.execPath, [scriptPath, ...args], {
