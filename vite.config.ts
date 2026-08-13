@@ -4,8 +4,10 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, ".", "");
-	const defaultBasePath = mode === "production" ? "/sola-glow-up/" : "/";
-	const basePath = env.VITE_BASE_PATH || defaultBasePath;
+	const configuredBasePath = env.VITE_BASE_PATH || "/";
+	const basePath = configuredBasePath.endsWith("/")
+		? configuredBasePath
+		: `${configuredBasePath}/`;
 
 	return {
 		base: basePath,

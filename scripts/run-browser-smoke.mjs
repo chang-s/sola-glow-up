@@ -3,7 +3,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 const host = "127.0.0.1";
 const port = "4173";
-const basePath = process.env.VITE_BASE_PATH ?? "/sola-glow-up/";
+const basePath = process.env.VITE_BASE_PATH ?? "/";
 const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
 const baseUrl = `http://${host}:${port}${normalizedBasePath}`;
 

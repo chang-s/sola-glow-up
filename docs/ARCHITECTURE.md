@@ -14,7 +14,7 @@ The larger V1/Milestone 1 habit and routine system is preserved and deferred. V1
 
 - Frontend: React, TypeScript, Vite
 - App model: responsive Progressive Web App
-- Deployment target: GitHub Pages for the V0.5 frontend/PWA, deployed from GitHub Actions. The initial project Pages URL is `https://chang-s.github.io/sola-glow-up/`; a custom `bysola.co` subdomain remains pending and is not configured yet.
+- Deployment target: GitHub Pages for the V0.5 frontend/PWA, deployed from GitHub Actions to the canonical production URL `https://glow.bysola.co/`.
 - Backend: Supabase
 - Database: Supabase Postgres
 - Authentication: Supabase Auth with email/password for V1
@@ -163,7 +163,7 @@ Support:
 
 Milestone 0 generates a PWA manifest and service worker with placeholder app metadata and icon assets. Offline behavior remains limited to app-shell/asset caching.
 
-GitHub Pages project-site builds use the Vite base path `/sola-glow-up/`, which also scopes the PWA manifest, service worker, and static asset URLs. When the future custom domain is configured, the deployment base should change to `/` by setting `VITE_BASE_PATH=/` in the GitHub Actions build environment.
+Production builds use the Vite base path `/` for the root custom domain `https://glow.bysola.co/`, which also scopes the PWA manifest, service worker, and static asset URLs to the domain root. The GitHub Pages workflow sets `VITE_BASE_PATH=/`, and `public/CNAME` preserves the custom domain in the deployed artifact.
 
 ## Responsive Strategy
 

@@ -57,7 +57,7 @@ For active V0.5 implementation, `V0.5.md` overrides older V1/Milestone roadmap l
 - TanStack Query for server state
 - Lightweight local UI state where necessary
 - Zod or comparable validation at app boundaries
-- Frontend/PWA hosting not yet finalized. Evaluate GitHub Pages as the preferred free option before introducing a paid or extra hosting service; Vercel remains an alternative if technical requirements make GitHub Pages unsuitable.
+- Frontend/PWA hosting: GitHub Pages deployed from GitHub Actions at the canonical production URL `https://glow.bysola.co/`.
 
 ## Architecture/Product Notes
 

@@ -2,6 +2,17 @@
 
 Future agents should append decisions to this log rather than silently rewriting historical decisions. Product-level changes should be proposed here and approved before the PRD is changed.
 
+## 2026-08-12 - Canonical Production URL
+
+Decision:
+Treat `https://glow.bysola.co/` as the canonical production URL for Sola Glow-Up.
+
+Rationale:
+Functional V0.5 is live on the custom domain and should deploy as a root-domain PWA rather than as a GitHub Pages project-path app.
+
+Consequences:
+Production Vite builds, PWA manifest scope/start URL, service worker scope, browser smoke tests, canonical/social metadata, and documentation should assume the app lives at `/` on `https://glow.bysola.co/`. Keep GitHub repository, Actions, and source-code links as GitHub URLs when they intentionally refer to repository infrastructure. Supabase Auth Dashboard URL settings should include the custom domain for email flows and redirects.
+
 ## 2026-08-12 - Functional V0.5 Complete And Pixel Polish Planning
 
 Decision:
