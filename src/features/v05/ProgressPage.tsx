@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, CircleDot, Sparkles, TrendingDown } from "lucide-react";
+import { Activity, CircleDot } from "lucide-react";
+import { PixelIcon } from "../../assets/pixelArt";
+import type { PixelIconName } from "../../assets/pixelArtAssets";
 import { formatFriendlyDate } from "./date";
 import {
 	buildWeightChartModel,
 	CHART_HEIGHT,
 	CHART_PADDING,
+	CHART_WIDTH,
 	getWeightSummary,
-	type ChartMode,
-	type ChartModel
+	MIN_CHART_WIDTH,
+	type ChartMode
 } from "./progress";
 import { useV05Progress } from "./useV05Today";
 import type { V05WeightEntry } from "./types";
@@ -35,10 +38,6 @@ export function ProgressPage() {
 	const [chartMode, setChartMode] = useState<ChartMode>("detail");
 	const entries = progress.data?.weightEntries ?? EMPTY_WEIGHT_ENTRIES;
 	const summary = useMemo(() => getWeightSummary(entries), [entries]);
-	const chartModel = useMemo(
-		() => buildWeightChartModel(entries, chartMode),
-		[entries, chartMode]
-	);
 
 	return (
 		<section className="v05-screen" aria-labelledby="progress-title">
@@ -56,12 +55,14 @@ export function ProgressPage() {
 						value={formatWeight(summary.starting?.weight ?? null)}
 						detail={formatSummaryDate(summary.starting)}
 						accent="rose"
+						icon="weight"
 					/>
 					<SummaryCard
 						label="Latest"
 						value={formatWeight(summary.latest?.weight ?? null)}
 						detail={formatSummaryDate(summary.latest)}
 						accent="butter"
+						icon="weight"
 					/>
 					<SummaryCard
 						label="Total change"
@@ -77,10 +78,14 @@ export function ProgressPage() {
 						}
 						tone={summary.change == null ? undefined : summary.change <= 0 ? "positive" : "warm"}
 						accent="green"
+						icon="weightTrend"
 					/>
 				</section>
 
-				<section className="chart-board progress-chart-board" aria-labelledby="weight-chart-title">
+				<section
+					className="chart-board progress-chart-board"
+					aria-labelledby="weight-chart-title"
+				>
 					<div className="section-heading compact">
 						<div>
 							<p className="eyebrow">Weight over time</p>
@@ -88,7 +93,9 @@ export function ProgressPage() {
 						</div>
 						<div className="chart-heading-actions">
 							<ChartModeToggle mode={chartMode} onChange={setChartMode} />
-							<TrendingDown aria-hidden="true" size={22} />
+							<span className="section-pixel-icon decorative-chart-icon" aria-hidden="true">
+								<PixelIcon name="weightTrend" uiSize="medium" />
+							</span>
 						</div>
 					</div>
 
@@ -103,7 +110,7 @@ export function ProgressPage() {
 					) : null}
 
 					{!progress.isLoading && !profile.isLoading && !progress.error && !profile.error ? (
-						<WeightChart entries={entries} chartModel={chartModel} />
+						<WeightChart entries={entries} mode={chartMode} />
 					) : null}
 
 				</section>
@@ -146,17 +153,22 @@ function SummaryCard({
 	value,
 	detail,
 	tone,
-	accent
+	accent,
+	icon
 }: {
 	label: string;
 	value: string;
 	detail: string;
 	tone?: "positive" | "warm";
 	accent: "rose" | "butter" | "green";
+	icon: PixelIconName;
 }) {
 	return (
 		<div className={tone ? `metric-card ${tone}` : "metric-card"}>
 			<i className={`metric-card-tab ${accent}`} aria-hidden="true" />
+			<span className="metric-pixel-icon" aria-hidden="true">
+				<PixelIcon name={icon} uiSize="tiny" />
+			</span>
 			<span>{label}</span>
 			<strong>{value}</strong>
 			<small>{detail}</small>
@@ -166,21 +178,58 @@ function SummaryCard({
 
 function WeightChart({
 	entries,
-	chartModel
+	mode
 }: {
 	entries: V05WeightEntry[];
-	chartModel: ChartModel | null;
+	mode: ChartMode;
 }) {
+	const wrapRef = useRef<HTMLDivElement | null>(null);
 	const scrollRef = useRef<HTMLDivElement | null>(null);
+	const autoScrolledKeyRef = useRef<string | null>(null);
+	const [availableChartWidth, setAvailableChartWidth] = useState(CHART_WIDTH);
 	const [activeDetail, setActiveDetail] = useState<
 		{ type: "recorded"; index: number } | { type: "missing"; dateKey: string }
 	>({ type: "recorded", index: 0 });
+	const chartModel = useMemo(
+		() => buildWeightChartModel(entries, mode, availableChartWidth),
+		[availableChartWidth, entries, mode]
+	);
+
+	useEffect(() => {
+		const target = wrapRef.current;
+		if (!target) return;
+
+		function updateWidth(width: number) {
+			const nextWidth = Math.max(MIN_CHART_WIDTH, Math.floor(width));
+			setAvailableChartWidth((current) => (current === nextWidth ? current : nextWidth));
+		}
+
+		updateWidth(target.getBoundingClientRect().width || CHART_WIDTH);
+
+		if (typeof ResizeObserver === "undefined") return;
+
+		const observer = new ResizeObserver(([entry]) => {
+			updateWidth(entry.contentRect.width);
+		});
+		observer.observe(target);
+
+		return () => observer.disconnect();
+	}, []);
 
 	useEffect(() => {
 		const scroller = scrollRef.current;
 		if (!scroller || !chartModel?.isHorizontallyScrollable) return;
+		const chartKey = [
+			chartModel.mode,
+			chartModel.timelineDays[0]?.dateKey,
+			chartModel.timelineDays.at(-1)?.dateKey,
+			chartModel.points.length
+		].join("|");
+		if (autoScrolledKeyRef.current === chartKey) return;
+
 		scroller.scrollLeft = scroller.scrollWidth - scroller.clientWidth;
-	}, [chartModel?.chartWidth, chartModel?.isHorizontallyScrollable, chartModel?.mode]);
+		autoScrolledKeyRef.current = chartKey;
+	}, [chartModel]);
 
 	if (!entries.length || !chartModel) {
 		return (
@@ -198,7 +247,7 @@ function WeightChart({
 	const axisLabel = `${formatWeight(chartModel.yMin)} to ${formatWeight(chartModel.yMax)}`;
 
 	return (
-		<div className="weight-chart-wrap">
+		<div className="weight-chart-wrap" ref={wrapRef}>
 			<div
 				ref={scrollRef}
 				className={
@@ -207,6 +256,7 @@ function WeightChart({
 						: "weight-chart-viewport"
 				}
 				data-chart-mode={chartModel.mode}
+				data-chart-width={chartModel.chartWidth}
 				data-scrollable={chartModel.isHorizontallyScrollable ? "true" : "false"}
 				aria-label={
 					chartModel.isHorizontallyScrollable
@@ -227,115 +277,127 @@ function WeightChart({
 					scroller.scrollLeft += event.deltaY;
 				}}
 			>
-				<svg
-					className="weight-chart"
-					width={chartModel.chartWidth}
-					height={CHART_HEIGHT}
-					viewBox={`0 0 ${chartModel.chartWidth} ${CHART_HEIGHT}`}
-					role="img"
-					aria-labelledby="weight-chart-description"
-				>
-					<title id="weight-chart-description">
-						Weight line graph in {chartModel.mode === "detail" ? "Detail" : "All Time"} view with{" "}
-						{entries.length} recorded weigh-in
-						{entries.length === 1 ? "" : "s"} across {chartModel.timelineDays.length} calendar day
-						{chartModel.timelineDays.length === 1 ? "" : "s"}. Y axis ranges from {axisLabel}.
-					</title>
-					<g className="chart-grid-lines" aria-hidden="true">
-						{chartModel.yTicks.map((tick) => {
-							const y = Number((
-								CHART_PADDING.top +
-								((chartModel.yMax - tick) / (chartModel.yMax - chartModel.yMin)) *
-									(CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom)
-							).toFixed(2));
-							return (
-								<g key={tick}>
-									<line x1={CHART_PADDING.left} x2={chartModel.chartWidth - CHART_PADDING.right} y1={y} y2={y} />
-									<text x={CHART_PADDING.left - 14} y={y + 4}>{formatWeight(tick)}</text>
-								</g>
-							);
-						})}
-					</g>
-					<line
-						className="chart-axis"
-						x1={CHART_PADDING.left}
-						x2={CHART_PADDING.left}
-						y1={CHART_PADDING.top}
-						y2={CHART_HEIGHT - CHART_PADDING.bottom}
-					/>
-					<line
-						className="chart-axis"
-						x1={CHART_PADDING.left}
-						x2={chartModel.chartWidth - CHART_PADDING.right}
-						y1={CHART_HEIGHT - CHART_PADDING.bottom}
-						y2={CHART_HEIGHT - CHART_PADDING.bottom}
-					/>
-					{entries.length > 1 ? (
-						<polyline className="weight-line" points={chartModel.linePoints} />
-					) : null}
-					{chartModel.shouldShowMissingMarkers
-						? chartModel.missingDays.map((day) => (
-								<g
-									key={day.dateKey}
-									className={
-										activeDetail.type === "missing" && activeDetail.dateKey === day.dateKey
-											? "missing-weight-point active"
-											: "missing-weight-point"
-									}
-									role="button"
-									tabIndex={0}
-									aria-label={`${formatFriendlyDate(day.dateKey)} no weight recorded`}
-									onClick={() => setActiveDetail({ type: "missing", dateKey: day.dateKey })}
-									onFocus={() => setActiveDetail({ type: "missing", dateKey: day.dateKey })}
-									onKeyDown={(event) => {
-										if (event.key === "Enter" || event.key === " ") {
-											event.preventDefault();
-											setActiveDetail({ type: "missing", dateKey: day.dateKey });
-										}
-									}}
-								>
-									<circle cx={day.x} cy={day.y ?? CHART_HEIGHT - CHART_PADDING.bottom - 12} r={6} />
-								</g>
-							))
-						: null}
-					<g className="chart-date-labels" aria-hidden="true">
-						{chartModel.xLabels.map((label) => (
-							<text key={label.dateKey} x={label.x} y={CHART_HEIGHT - 18}>
-								<tspan x={label.x} dy={label.weekday ? "-0.3em" : "0"}>
-									{label.label}
-								</tspan>
-								{label.weekday ? (
-									<tspan className="weekday-label" x={label.x} dy="1.25em">
-										{label.weekday}
-									</tspan>
-								) : null}
-							</text>
-						))}
-					</g>
-					{chartModel.points.map((point, index) => (
-						<g
-							key={point.entry_date}
-							className={
-								activeDetail.type === "recorded" && index === activeDetail.index
-									? "weight-point active"
-									: "weight-point"
-							}
-							role="button"
-							tabIndex={0}
-							aria-label={`${formatFriendlyDate(point.entry_date)} ${formatWeight(point.weight)}`}
-							onClick={() => setActiveDetail({ type: "recorded", index })}
-							onFocus={() => setActiveDetail({ type: "recorded", index })}
-							onKeyDown={(event) => {
-								if (event.key === "Enter" || event.key === " ") {
-									event.preventDefault();
-									setActiveDetail({ type: "recorded", index });
+				<div
+					className="weight-chart-canvas"
+					style={
+						chartModel.mode === "detail"
+							? {
+									width: `${chartModel.chartWidth}px`,
+									minWidth: `${chartModel.chartWidth}px`
 								}
-							}}
-						>
-							<circle cx={point.x} cy={point.y} r={chartModel.mode === "all-time" && entries.length > 60 ? 5 : 8} />
+							: undefined
+					}
+				>
+					<svg
+						className="weight-chart"
+						width={chartModel.chartWidth}
+						height={CHART_HEIGHT}
+						viewBox={`0 0 ${chartModel.chartWidth} ${CHART_HEIGHT}`}
+						role="img"
+						aria-labelledby="weight-chart-description"
+					>
+						<title id="weight-chart-description">
+							Weight line graph in {chartModel.mode === "detail" ? "Detail" : "All Time"} view with{" "}
+							{entries.length} recorded weigh-in
+							{entries.length === 1 ? "" : "s"} across {chartModel.timelineDays.length} calendar day
+							{chartModel.timelineDays.length === 1 ? "" : "s"}. Y axis ranges from {axisLabel}.
+						</title>
+						<g className="chart-grid-lines" aria-hidden="true">
+							{chartModel.yTicks.map((tick) => {
+								const y = Number((
+									CHART_PADDING.top +
+									((chartModel.yMax - tick) / (chartModel.yMax - chartModel.yMin)) *
+										(CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom)
+								).toFixed(2));
+								return (
+									<g key={tick}>
+										<line x1={CHART_PADDING.left} x2={chartModel.chartWidth - CHART_PADDING.right} y1={y} y2={y} />
+										<text x={CHART_PADDING.left - 14} y={y + 4}>{formatWeight(tick)}</text>
+									</g>
+								);
+							})}
 						</g>
-					))}
-				</svg>
+						<line
+							className="chart-axis"
+							x1={CHART_PADDING.left}
+							x2={CHART_PADDING.left}
+							y1={CHART_PADDING.top}
+							y2={CHART_HEIGHT - CHART_PADDING.bottom}
+						/>
+						<line
+							className="chart-axis"
+							x1={CHART_PADDING.left}
+							x2={chartModel.chartWidth - CHART_PADDING.right}
+							y1={CHART_HEIGHT - CHART_PADDING.bottom}
+							y2={CHART_HEIGHT - CHART_PADDING.bottom}
+						/>
+						{entries.length > 1 ? (
+							<polyline className="weight-line" points={chartModel.linePoints} />
+						) : null}
+						{chartModel.shouldShowMissingMarkers
+							? chartModel.missingDays.map((day) => (
+									<g
+										key={day.dateKey}
+										className={
+											activeDetail.type === "missing" && activeDetail.dateKey === day.dateKey
+												? "missing-weight-point active"
+												: "missing-weight-point"
+										}
+										role="button"
+										tabIndex={0}
+										aria-label={`${formatFriendlyDate(day.dateKey)} no weight recorded`}
+										onClick={() => setActiveDetail({ type: "missing", dateKey: day.dateKey })}
+										onFocus={() => setActiveDetail({ type: "missing", dateKey: day.dateKey })}
+										onKeyDown={(event) => {
+											if (event.key === "Enter" || event.key === " ") {
+												event.preventDefault();
+												setActiveDetail({ type: "missing", dateKey: day.dateKey });
+											}
+										}}
+									>
+										<circle cx={day.x} cy={day.y ?? CHART_HEIGHT - CHART_PADDING.bottom - 12} r={6} />
+									</g>
+								))
+							: null}
+						<g className="chart-date-labels" aria-hidden="true">
+							{chartModel.xLabels.map((label) => (
+								<text key={label.dateKey} x={label.x} y={CHART_HEIGHT - 18}>
+									<tspan x={label.x} dy={label.weekday ? "-0.3em" : "0"}>
+										{label.label}
+									</tspan>
+									{label.weekday ? (
+										<tspan className="weekday-label" x={label.x} dy="1.25em">
+											{label.weekday}
+										</tspan>
+									) : null}
+								</text>
+							))}
+						</g>
+						{chartModel.points.map((point, index) => (
+							<g
+								key={point.entry_date}
+								className={
+									activeDetail.type === "recorded" && index === activeDetail.index
+										? "weight-point active"
+										: "weight-point"
+								}
+								role="button"
+								tabIndex={0}
+								aria-label={`${formatFriendlyDate(point.entry_date)} ${formatWeight(point.weight)}`}
+								onClick={() => setActiveDetail({ type: "recorded", index })}
+								onFocus={() => setActiveDetail({ type: "recorded", index })}
+								onKeyDown={(event) => {
+									if (event.key === "Enter" || event.key === " ") {
+										event.preventDefault();
+										setActiveDetail({ type: "recorded", index });
+									}
+								}}
+							>
+								<circle cx={point.x} cy={point.y} r={chartModel.mode === "all-time" && entries.length > 60 ? 5 : 8} />
+							</g>
+						))}
+					</svg>
+				</div>
 			</div>
 			<div className="chart-legend" aria-label="Weight chart legend">
 				<span><i className="legend-dot recorded" aria-hidden="true" />Recorded weight</span>
@@ -360,7 +422,7 @@ function WeightChart({
 				<p className="empty-note">Add another weigh-in to start seeing your trend.</p>
 			) : null}
 			<p className="progress-context-note">
-				<Sparkles aria-hidden="true" size={22} />
+				<PixelIcon name="sparkles" aria-hidden="true" />
 				<span>
 					<strong>Tracking since {formatFriendlyDate(entries[0].entry_date)}</strong>
 					{entries.length === 1 ? "1 weigh-in recorded" : `${entries.length} weigh-ins recorded`}

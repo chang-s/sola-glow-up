@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-	Camera,
 	ChevronLeft,
 	ChevronRight,
 	ImageOff,
 	PencilLine
 } from "lucide-react";
+import { PixelIcon } from "../../assets/pixelArt";
 import { getDueChecklistItems } from "./checklist";
 import { addCalendarDays, formatFriendlyDate, toLocalDateKey } from "./date";
 import { FoodPhotoDialog } from "./FoodPhotoDialog";
@@ -64,7 +64,10 @@ export function HistoryPage() {
 		<section className="v05-screen" aria-labelledby="history-title">
 			<div className="surface-header history-header">
 				<div>
-					<p className="eyebrow">Notebook</p>
+					<p className="eyebrow icon-eyebrow">
+						<PixelIcon name="history" aria-hidden="true" />
+						Notebook
+					</p>
 					<h2 id="history-title">History</h2>
 				</div>
 				<div className="notebook-tabs" aria-label="History sections">
@@ -180,7 +183,10 @@ function DailyEntriesHistory({
 	return (
 		<div className="history-layout">
 			<section className="pixel-card notebook-panel" aria-labelledby="entries-title">
-				<p className="eyebrow">Past pages</p>
+				<p className="eyebrow icon-eyebrow">
+					<PixelIcon name="calendar" aria-hidden="true" />
+					Past pages
+				</p>
 				<h3 id="entries-title">Daily entries</h3>
 				{entries.length ? (
 					<div className="entry-list">
@@ -273,7 +279,7 @@ function DailyEntriesHistory({
 						{completedItems.length ? (
 							completedItems.map((item) => (
 								<span key={item.key} className="completed-chip">
-									<CheckMark />
+									<PixelIcon name="completed" aria-hidden="true" />
 									{item.label}
 								</span>
 							))
@@ -307,10 +313,6 @@ function DailyEntriesHistory({
 	);
 }
 
-function CheckMark() {
-	return <span aria-hidden="true">✓</span>;
-}
-
 function FoodGallery({
 	photos,
 	isDeleting,
@@ -321,13 +323,18 @@ function FoodGallery({
 	onOpenPhoto: (photo: V05FoodPhotoWithUrl) => void;
 }) {
 	return (
-		<section className="pixel-card scrapbook-panel full-history-panel" aria-labelledby="gallery-title">
+		<section
+			className="pixel-card scrapbook-panel full-history-panel"
+			aria-labelledby="gallery-title"
+		>
 			<div className="section-heading compact">
 				<div>
 					<p className="eyebrow">Scrapbook</p>
 					<h3 id="gallery-title">Food gallery</h3>
 				</div>
-				<Camera aria-hidden="true" size={20} />
+				<span className="section-pixel-icon" aria-hidden="true">
+					<PixelIcon name="camera" />
+				</span>
 			</div>
 			{photos.length ? (
 				<div className="scrapbook-grid food-gallery-grid" aria-label="Food photo gallery">

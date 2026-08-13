@@ -39,6 +39,7 @@ export type ChartMode = "detail" | "all-time";
 
 export const CHART_WIDTH = 720;
 export const CHART_HEIGHT = 260;
+export const MIN_CHART_WIDTH = 320;
 export const CHART_PADDING = {
 	top: 24,
 	right: 34,
@@ -47,6 +48,7 @@ export const CHART_PADDING = {
 };
 const DETAIL_DAY_WIDTH = 52;
 const DETAIL_MISSING_MARKER_LIMIT = 120;
+const MIN_AXIS_LABEL_SPACING = 74;
 
 function daysBetween(startDateKey: string, endDateKey: string) {
 	const start = parseLocalDateKey(startDateKey).getTime();
@@ -78,21 +80,22 @@ function getVisibleLabelIndexes(timelineLength: number) {
 	return Array.from(new Set(indexes));
 }
 
-function getAllTimeLabelIndexes(timelineDateKeys: string[]) {
+function getAllTimeLabelIndexes(timelineDateKeys: string[], availableChartWidth: number) {
 	const timelineLength = timelineDateKeys.length;
 	if (timelineLength <= 21) return getVisibleLabelIndexes(timelineLength);
 
-	const indexes = [0, timelineLength - 1];
-	const interval =
-		timelineLength <= 92 ? 14 : timelineLength <= 370 ? 31 : Math.ceil(timelineLength / 8);
+	const plotWidth = Math.max(1, availableChartWidth - CHART_PADDING.left - CHART_PADDING.right);
+	const maxLabelCount = Math.max(2, Math.floor(plotWidth / MIN_AXIS_LABEL_SPACING));
+	const interval = Math.max(1, Math.ceil((timelineLength - 1) / (maxLabelCount - 1)));
+	const indexes = new Set([0, timelineLength - 1]);
 
 	timelineDateKeys.forEach((_, index) => {
 		if (index !== 0 && index !== timelineLength - 1 && index % interval === 0) {
-			indexes.push(index);
+			indexes.add(index);
 		}
 	});
 
-	return Array.from(new Set(indexes)).sort((left, right) => left - right);
+	return Array.from(indexes).sort((left, right) => left - right);
 }
 
 function formatAxisLabel(dateKey: string, mode: ChartMode, timelineLength: number) {
@@ -132,7 +135,8 @@ export function getWeightSummary(entries: V05WeightEntry[]): WeightSummary {
 
 export function buildWeightChartModel(
 	entries: V05WeightEntry[],
-	mode: ChartMode = "detail"
+	mode: ChartMode = "detail",
+	availableChartWidth = CHART_WIDTH
 ): ChartModel | null {
 	if (!entries.length) return null;
 
@@ -151,7 +155,8 @@ export function buildWeightChartModel(
 	const recordedDates = new Set(entries.map((entry) => entry.entry_date));
 	const timelineDateKeys = getDailyTimeline(firstDate, lastDate);
 	const timelineSpan = Math.max(1, timelineDateKeys.length - 1);
-	const basePlotWidth = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
+	const viewportWidth = Math.max(MIN_CHART_WIDTH, Math.floor(availableChartWidth));
+	const basePlotWidth = viewportWidth - CHART_PADDING.left - CHART_PADDING.right;
 	const detailPlotWidth = Math.max(basePlotWidth, timelineSpan * DETAIL_DAY_WIDTH);
 	const plotWidth = mode === "detail" ? detailPlotWidth : basePlotWidth;
 	const chartWidth = CHART_PADDING.left + plotWidth + CHART_PADDING.right;
@@ -209,7 +214,7 @@ export function buildWeightChartModel(
 	const labelIndexes =
 		mode === "detail"
 			? getVisibleLabelIndexes(timelineDays.length)
-			: getAllTimeLabelIndexes(timelineDateKeys);
+			: getAllTimeLabelIndexes(timelineDateKeys, chartWidth);
 	const xLabels = Array.from(new Set(labelIndexes)).map((index) => {
 		const dateKey = timelineDays[index].dateKey;
 		const formatted = formatAxisLabel(dateKey, mode, timelineDays.length);
@@ -233,7 +238,7 @@ export function buildWeightChartModel(
 		yMax,
 		yTicks,
 		xLabels,
-		isHorizontallyScrollable: mode === "detail" && chartWidth > CHART_WIDTH,
+		isHorizontallyScrollable: mode === "detail" && chartWidth > viewportWidth,
 		shouldShowMissingMarkers:
 			mode === "detail" && timelineDays.length <= DETAIL_MISSING_MARKER_LIMIT
 	};

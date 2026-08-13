@@ -237,8 +237,8 @@ describe("V0.5 Today page", () => {
 		renderToday();
 		setEntryDate("2026-08-12");
 
-		expect(screen.getByLabelText("Activity type")).toBeDisabled();
-		expect(screen.getByLabelText(/Duration/)).toBeDisabled();
+		expect(screen.queryByLabelText("Activity type")).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/Duration/)).not.toBeInTheDocument();
 
 		fireEvent.click(screen.getByLabelText("Worked Out"));
 
@@ -249,8 +249,9 @@ describe("V0.5 Today page", () => {
 				completed: true
 			});
 		});
-		expect(screen.getByLabelText("Activity type")).not.toBeDisabled();
-		expect(screen.getByLabelText(/Duration/)).not.toBeDisabled();
+		expect(screen.getByLabelText("Activity type")).toBeInTheDocument();
+		expect(screen.getByLabelText(/Duration/)).toBeInTheDocument();
+		expect(screen.getByLabelText("Worked Out")).toHaveAttribute("aria-expanded", "true");
 	});
 
 	it("shows save failure feedback without exposing raw errors", async () => {
@@ -365,9 +366,21 @@ describe("V0.5 Today page", () => {
 		const { container } = renderToday();
 
 		expect(container.querySelectorAll(".streak-card .streak-icon")).toHaveLength(5);
+		expect(container.querySelectorAll(".field-icon .pixel-art-icon").length).toBeGreaterThan(8);
+		expect(container.querySelector(".today-mascot")).not.toBeInTheDocument();
 		expect(screen.getByLabelText(/Weight/)).toBeInTheDocument();
 		expect(screen.getByLabelText("Steps")).toBeInTheDocument();
 		expect(screen.getByLabelText("Yesterday's calories")).toBeInTheDocument();
+	});
+
+	it("renders Today as checklist, daily details, and food scrapbook sections", () => {
+		const { container } = renderToday();
+
+		expect(screen.getByRole("heading", { name: "Checklist" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Daily details" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Food photos" })).toBeInTheDocument();
+		expect(container.querySelectorAll(".checkin-section")).toHaveLength(3);
+		expect(container.querySelector(".board-clip")).toBeInTheDocument();
 	});
 
 	it("uses styled food upload controls while keeping the real file input accessible", () => {
@@ -380,6 +393,8 @@ describe("V0.5 Today page", () => {
 		expect(container.querySelector(".photo-picker-button")).toHaveTextContent(
 			"Choose or take photo"
 		);
+		expect(container.querySelector(".photo-picker-button .pixel-art-icon"))
+			.not.toBeInTheDocument();
 
 		fireEvent.change(fileInput, { target: { files: [file] } });
 

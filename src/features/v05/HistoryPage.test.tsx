@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import css from "../../styles/global.css?raw";
 import { HistoryPage } from "./HistoryPage";
 import type { V05HistoryData } from "./types";
 
@@ -73,9 +74,10 @@ describe("V0.5 History page", () => {
 	});
 
 	it("shows an empty daily history state", () => {
-		renderHistory();
+		const { container } = renderHistory();
 
 		expect(screen.getByRole("heading", { name: "Daily entries" })).toBeInTheDocument();
+		expect(container.querySelector(".icon-eyebrow .pixel-art-icon")).toBeInTheDocument();
 		expect(screen.getByText("Your first page starts with today's check-in."))
 			.toBeInTheDocument();
 	});
@@ -176,6 +178,7 @@ describe("V0.5 History page", () => {
 		const gallery = screen.getByLabelText("Food photo gallery");
 		const cards = within(gallery).getAllByRole("button");
 
+		expect(document.querySelector(".history-mascot")).not.toBeInTheDocument();
 		expect(cards[0]).toHaveTextContent("Lunch");
 		expect(cards[0]).toHaveTextContent("Salmon + veggies");
 		expect(cards[1]).toHaveTextContent("Snack");
@@ -260,7 +263,19 @@ describe("V0.5 History page", () => {
 		fireEvent.click(screen.getByRole("button", { name: /Lunch/ }));
 
 		expect(screen.getByText("1 of 2")).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Previous photo" })).toBeDisabled();
+		const previousButton = screen.getByRole("button", { name: "Previous photo" });
+		const nextButton = screen.getByRole("button", { name: "Next photo" });
+		expect(previousButton).toHaveClass("photo-dialog-arrow", "previous");
+		expect(nextButton).toHaveClass("photo-dialog-arrow", "next");
+		expect(previousButton.closest(".photo-dialog-shell")).toBe(
+			screen.getByRole("dialog").closest(".photo-dialog-shell")
+		);
+		expect(previousButton.closest(".photo-dialog")).toBeNull();
+		expect(screen.getByRole("dialog").querySelector(".detail-photo-image")).toHaveAttribute(
+			"alt",
+			"Lunch food photo from Wed, Aug 12"
+		);
+		expect(previousButton).toBeDisabled();
 		fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
 		expect(screen.getByRole("dialog", { name: "Dinner" })).toBeInTheDocument();
 		expect(screen.getByText("2 of 2")).toBeInTheDocument();
@@ -372,5 +387,10 @@ describe("V0.5 History page", () => {
 		expect(within(screen.getByRole("dialog")).getByRole("img")).toHaveClass(
 			"detail-photo-image"
 		);
+		expect(css).toContain("image-rendering: auto;");
+		expect(css).toContain(".detail-photo-image {\n\tdisplay: block;");
+		expect(css).toContain("\tobject-fit: contain;");
+		expect(css).toContain(".photo-thumb-button img {\n\twidth: 100%;\n\theight: 100%;\n\timage-rendering: auto;");
+		expect(css).toContain(".food-photo-frame img,\n.photo-dialog-image img {\n\twidth: 100%;\n\theight: 100%;\n\timage-rendering: auto;");
 	});
 });

@@ -37,24 +37,31 @@ function renderApp(
 
 describe("App foundation", () => {
 	it("renders the V0.5 Today shell when Supabase is not configured", () => {
-		renderApp();
+		const { container } = renderApp();
 
 		expect(
 			screen.getByRole("heading", { name: "Sola Glow-Up" })
 		).toBeInTheDocument();
 		expect(screen.getAllByRole("navigation", { name: "Primary" })[0]).toBeInTheDocument();
+		expect(container.querySelector(".route-mascot-image")).toHaveAttribute(
+			"src",
+			expect.stringContaining("sola-today")
+		);
+		expect(container.querySelector(".route-mascot > .pixel-art-icon"))
+			.not.toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Daily check-in" })).toBeInTheDocument();
-		expect(screen.getByText("Checklist")).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Checklist" })).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Current streaks" })).toBeInTheDocument();
 	});
 
 	it("exposes only the active V0.5 destinations", () => {
-		renderApp("/today");
+		const { container } = renderApp("/today");
 
 		expect(screen.getAllByRole("link", { name: "Today" })).toHaveLength(2);
 		expect(screen.getAllByRole("link", { name: "History" })).toHaveLength(2);
 		expect(screen.getAllByRole("link", { name: "Progress" })).toHaveLength(2);
+		expect(container.querySelectorAll(".nav-item .pixel-art-icon")).toHaveLength(6);
 		expect(screen.queryByRole("link", { name: "Glow Up" })).not.toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: "Food" })).not.toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: "Fitness" })).not.toBeInTheDocument();
@@ -66,8 +73,12 @@ describe("App foundation", () => {
 	});
 
 	it("renders the History shell", () => {
-		renderApp("/history");
+		const { container } = renderApp("/history");
 
+		expect(container.querySelector(".route-mascot-image")).toHaveAttribute(
+			"src",
+			expect.stringContaining("sola-history")
+		);
 		expect(screen.getByRole("heading", { name: "History" })).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Daily entries" })).toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: "Food Gallery" }));
@@ -75,8 +86,12 @@ describe("App foundation", () => {
 	});
 
 	it("renders the Progress shell", () => {
-		renderApp("/progress");
+		const { container } = renderApp("/progress");
 
+		expect(container.querySelector(".route-mascot-image")).toHaveAttribute(
+			"src",
+			expect.stringContaining("sola-progress")
+		);
 		expect(screen.getByRole("heading", { name: "Progress" })).toBeInTheDocument();
 		expect(screen.getByRole("heading", { name: "Weight trend" })).toBeInTheDocument();
 	});

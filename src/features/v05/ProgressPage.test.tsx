@@ -1,8 +1,13 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import css from "../../styles/global.css?raw";
 import { ProgressPage } from "./ProgressPage";
-import { buildWeightChartModel, CHART_WIDTH, getWeightSummary } from "./progress";
+import {
+	buildWeightChartModel,
+	CHART_WIDTH,
+	getWeightSummary,
+	MIN_CHART_WIDTH
+} from "./progress";
 import type { V05ProgressData } from "./types";
 
 let mockProgressData: V05ProgressData;
@@ -226,6 +231,24 @@ describe("V0.5 Progress page", () => {
 		expect(model?.missingDays.length).toBe(28);
 	});
 
+	it("bases Detail intrinsic width on calendar days and the available viewport", () => {
+		const model = buildWeightChartModel(longRangeEntries().weightEntries, "detail", 420);
+		const sparseModel = buildWeightChartModel(
+			[
+				{ entry_date: "2026-08-01", weight: 184 },
+				{ entry_date: "2026-08-31", weight: 179 }
+			],
+			"detail",
+			420
+		);
+
+		expect(model?.timelineDays).toHaveLength(31);
+		expect(model?.points).toHaveLength(3);
+		expect(model?.chartWidth).toBeGreaterThan(420);
+		expect(model?.chartWidth).toBe(sparseModel?.chartWidth);
+		expect(model?.isHorizontallyScrollable).toBe(true);
+	});
+
 	it("initially scrolls Detail to the latest portion of a long timeline", () => {
 		const clientWidth = vi
 			.spyOn(HTMLElement.prototype, "clientWidth", "get")
@@ -270,6 +293,19 @@ describe("V0.5 Progress page", () => {
 		expect(model?.timelineDays).toHaveLength(31);
 	});
 
+	it("fits All Time to the provided viewport without inheriting Detail width", () => {
+		const entries = longRangeEntries().weightEntries;
+		const detailModel = buildWeightChartModel(entries, "detail", 420);
+		const allTimeModel = buildWeightChartModel(entries, "all-time", 420);
+		const [first, middle, last] = allTimeModel?.points ?? [];
+
+		expect(detailModel?.chartWidth).toBeGreaterThan(420);
+		expect(allTimeModel?.chartWidth).toBe(420);
+		expect(allTimeModel?.isHorizontallyScrollable).toBe(false);
+		expect(middle.x - first.x).toBeLessThan(last.x - middle.x);
+		expect(allTimeModel?.timelineDays).toHaveLength(31);
+	});
+
 	it("uses thinned All Time labels and omits excessive missing markers", () => {
 		const entries = [
 			{ entry_date: "2026-01-01", weight: 184 },
@@ -281,6 +317,23 @@ describe("V0.5 Progress page", () => {
 		expect(model?.xLabels.length).toBeLessThan(20);
 		expect(model?.xLabels.some((label) => label.label === "Jan")).toBe(true);
 		expect(model?.shouldShowMissingMarkers).toBe(false);
+	});
+
+	it("uses fewer All Time labels at narrow widths than wide widths", () => {
+		const entries = [
+			{ entry_date: "2026-01-01", weight: 184 },
+			{ entry_date: "2026-12-31", weight: 176 }
+		];
+		const narrowModel = buildWeightChartModel(entries, "all-time", MIN_CHART_WIDTH);
+		const wideModel = buildWeightChartModel(entries, "all-time", 900);
+
+		expect(narrowModel?.chartWidth).toBe(MIN_CHART_WIDTH);
+		expect(wideModel?.chartWidth).toBe(900);
+		expect(narrowModel?.xLabels.length).toBeLessThan(wideModel?.xLabels.length ?? 0);
+		expect(narrowModel?.xLabels.at(0)?.dateKey).toBe("2026-01-01");
+		expect(narrowModel?.xLabels.at(-1)?.dateKey).toBe("2026-12-31");
+		expect(narrowModel?.missingDays.length).toBe(363);
+		expect(narrowModel?.shouldShowMissingMarkers).toBe(false);
 	});
 
 	it("switches Detail and All Time without changing recorded weight data", () => {
@@ -301,6 +354,52 @@ describe("V0.5 Progress page", () => {
 			"all-time"
 		);
 		expect(screen.getAllByRole("button", { name: /lb/ })).toHaveLength(3);
+	});
+
+	it("removes Detail overflow width when switching to All Time in a narrow container", async () => {
+		const rectSpy = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockImplementation(function getRect(this: HTMLElement) {
+				return {
+					x: 0,
+					y: 0,
+					top: 0,
+					left: 0,
+					right: this.classList.contains("weight-chart-wrap") ? 420 : 0,
+					bottom: 0,
+					width: this.classList.contains("weight-chart-wrap") ? 420 : 0,
+					height: 0,
+					toJSON: () => ({})
+				};
+			});
+
+		try {
+			renderProgress(longRangeEntries());
+
+			const detailViewport = await screen.findByLabelText("Scrollable daily weight chart");
+			await waitFor(() => {
+				expect(Number(detailViewport.getAttribute("data-chart-width"))).toBeGreaterThan(420);
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "All Time" }));
+			const allTimeViewport = screen.getByLabelText("Weight chart");
+
+			await waitFor(() => {
+				expect(allTimeViewport).toHaveAttribute("data-chart-mode", "all-time");
+				expect(allTimeViewport).toHaveAttribute("data-scrollable", "false");
+				expect(allTimeViewport).toHaveAttribute("data-chart-width", "420");
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Detail" }));
+			await waitFor(() => {
+				expect(screen.getByLabelText("Scrollable daily weight chart")).toHaveAttribute(
+					"data-scrollable",
+					"true"
+				);
+			});
+		} finally {
+			rectSpy.mockRestore();
+		}
 	});
 
 	it("processes hundreds of timeline dates without rendering no-entry markers in All Time", () => {
@@ -355,13 +454,16 @@ describe("V0.5 Progress page", () => {
 	});
 
 	it("renders weekday labels and the sparkle tracking footer", () => {
-		renderProgress({
+		const { container } = renderProgress({
 			weightEntries: [
 				{ entry_date: "2026-08-09", weight: 206.9 },
 				{ entry_date: "2026-08-12", weight: 201.4 }
-			]
-		});
+		]
+	});
 
+		expect(container.querySelector(".progress-mascot")).not.toBeInTheDocument();
+		expect(container.querySelector(".progress-context-note .pixel-art-icon"))
+			.toBeInTheDocument();
 		expect(screen.getByText("Sun")).toBeInTheDocument();
 		expect(screen.getByText("Wed")).toBeInTheDocument();
 		expect(screen.getByText("Tracking since Sun, Aug 9")).toBeInTheDocument();
@@ -382,12 +484,16 @@ describe("V0.5 Progress page", () => {
 
 	it("keeps one graph-paper background layer and left-aligned max-width Progress layout", () => {
 		expect(css).toContain(
-			".progress-layout {\n\tgrid-template-columns: 1fr;\n\twidth: min(100%, 58rem);\n\tmargin-inline: 0;"
+			".progress-layout {\n\tgrid-template-columns: 1fr;\n\tmin-width: 0;\n\twidth: min(100%, 58rem);\n\tmargin-inline: 0;"
 		);
 		expect(css).toContain(".progress-chart-board {\n\tdisplay: grid;");
+		expect(css).not.toContain(".progress-mascot");
+		expect(css).not.toContain("progress-mascot-stage");
 		expect(css).toContain("\tbackground: var(--paper);");
 		expect(css).toContain(".weight-chart {\n\tdisplay: block;");
 		expect(css).toContain("\tbackground: transparent;");
+		expect(css).toContain(".weight-chart-viewport.scrollable {\n\toverflow-x: auto;");
+		expect(css).toContain(".weight-chart-viewport[data-chart-mode=\"all-time\"] .weight-chart {\n\twidth: 100%;");
 		expect(css).toContain(
 			"linear-gradient(rgba(205, 178, 154, 0.34) 1px, transparent 1px)"
 		);
@@ -399,7 +505,32 @@ describe("V0.5 Progress page", () => {
 		);
 		expect(css).toContain("width: min(100%, 74rem);");
 		expect(css).toContain(
+			".quest-board {\n\tdisplay: grid;\n\tgap: 1rem;\n\tmin-height: 32rem;\n\tpadding: 1.35rem;"
+		);
+		expect(css).toContain(".board-clip {\n\tposition: absolute;\n\ttop: -0.9rem;\n\tleft: 50%;");
+		expect(css).not.toContain(".today-mascot");
+		expect(css).toContain(
 			".today-layout,\n\t.history-layout,\n\t.metric-strip {\n\t\tgrid-template-columns: 1fr;"
 		);
+		expect(css).toContain(".route-mascot {\n\t\tdisplay: none;");
+	});
+
+	it("keeps decorative Progress icons out of the interactive controls", () => {
+		const { container } = renderProgress({
+			weightEntries: [
+				{ entry_date: "2026-08-12", weight: 181.6 },
+				{ entry_date: "2026-08-14", weight: 180.4 }
+			]
+		});
+
+		expect(container.querySelectorAll(".metric-pixel-icon")).toHaveLength(3);
+		expect(container.querySelector(".decorative-chart-icon")).toBeInTheDocument();
+		expect(container.querySelector(".metric-pixel-icon button")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Detail" })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "All Time" })).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: /weight trend/i })).not.toBeInTheDocument();
+		expect(css).toContain(".decorative-chart-icon {\n\tborder: 0;");
+		expect(css).toContain(".metric-pixel-icon {\n\tposition: absolute;");
+		expect(css).not.toContain(".metric-pixel-icon {\n\tposition: absolute;\n\ttop: 0.45rem;\n\tright: 0.45rem;\n\twidth: 1.85rem;\n\taspect-ratio: 1;\n\tbackground: #fffdf8;");
 	});
 });

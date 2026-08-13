@@ -47,73 +47,82 @@ export function FoodPhotoDialog({
 
 	return (
 		<div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-			<section
-				className="photo-dialog"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="photo-dialog-title"
-				onMouseDown={(event) => event.stopPropagation()}
-			>
-				<div className="section-heading compact">
-					<div>
-						<p className="eyebrow">{formatFriendlyDate(photo.entry_date)}</p>
-						<h3 id="photo-dialog-title">{photo.meal_type ?? "Food photo"}</h3>
-					</div>
+			<div className="photo-dialog-shell" onMouseDown={(event) => event.stopPropagation()}>
+				{total && total > 1 ? (
 					<button
 						type="button"
-						className="text-button"
-						onClick={onClose}
-						ref={closeButtonRef}
+						className="photo-dialog-arrow previous"
+						aria-label="Previous photo"
+						disabled={!canGoPrevious}
+						onClick={onPrevious}
 					>
-						Close
+						&lt;
 					</button>
-				</div>
-				{total && total > 1 ? (
-					<div className="photo-dialog-nav" aria-label="Photo navigation">
+				) : null}
+				<section
+					className="photo-dialog"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="photo-dialog-title"
+				>
+					<div className="section-heading compact">
+						<div>
+							<p className="eyebrow">{formatFriendlyDate(photo.entry_date)}</p>
+							<h3 id="photo-dialog-title">{photo.meal_type ?? "Food photo"}</h3>
+						</div>
 						<button
 							type="button"
-							aria-label="Previous photo"
-							disabled={!canGoPrevious}
-							onClick={onPrevious}
+							className="text-button"
+							onClick={onClose}
+							ref={closeButtonRef}
 						>
-							&lt;
-						</button>
-						<span>{position} of {total}</span>
-						<button
-							type="button"
-							aria-label="Next photo"
-							disabled={!canGoNext}
-							onClick={onNext}
-						>
-							&gt;
+							Close
 						</button>
 					</div>
+					{total && total > 1 ? (
+						<div className="photo-dialog-nav" aria-label="Photo navigation">
+							<span>{position} of {total}</span>
+						</div>
+					) : null}
+					<div className="photo-dialog-viewer">
+						<div className="photo-dialog-image">
+							{photo.signedUrl ? (
+								<img
+									className="detail-photo-image"
+									src={photo.signedUrl}
+									alt={foodPhotoAlt(photo)}
+								/>
+							) : (
+								<span className="photo-fallback">
+									<ImageOff aria-hidden="true" size={28} />
+									Preview unavailable
+								</span>
+							)}
+						</div>
+					</div>
+					{photo.note ? <p className="photo-dialog-note">{photo.note}</p> : null}
+					<button
+						type="button"
+						className="text-button danger-button"
+						disabled={isDeleting}
+						onClick={onDelete}
+					>
+						<Trash2 aria-hidden="true" size={16} />
+						{isDeleting ? "Deleting..." : "Delete photo"}
+					</button>
+				</section>
+				{total && total > 1 ? (
+					<button
+						type="button"
+						className="photo-dialog-arrow next"
+						aria-label="Next photo"
+						disabled={!canGoNext}
+						onClick={onNext}
+					>
+						&gt;
+					</button>
 				) : null}
-				<div className="photo-dialog-image">
-					{photo.signedUrl ? (
-						<img
-							className="detail-photo-image"
-							src={photo.signedUrl}
-							alt={foodPhotoAlt(photo)}
-						/>
-					) : (
-						<span className="photo-fallback">
-							<ImageOff aria-hidden="true" size={28} />
-							Preview unavailable
-						</span>
-					)}
-				</div>
-				{photo.note ? <p className="photo-dialog-note">{photo.note}</p> : null}
-				<button
-					type="button"
-					className="text-button danger-button"
-					disabled={isDeleting}
-					onClick={onDelete}
-				>
-					<Trash2 aria-hidden="true" size={16} />
-					{isDeleting ? "Deleting..." : "Delete photo"}
-				</button>
-			</section>
+			</div>
 		</div>
 	);
 }

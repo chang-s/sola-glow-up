@@ -1,25 +1,12 @@
 import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
-import type { LucideIcon } from "lucide-react";
 import {
-	Bed,
-	CalendarDays,
-	Camera,
 	Check,
-	ChevronLeft,
-	ChevronRight,
-	Dumbbell,
 	ImageOff,
-	Moon,
-	PencilLine,
-	Pill,
 	ShieldCheck,
-	Sparkles,
-	SportShoe,
-	Sun,
-	Timer,
-	Utensils,
-	Weight
+	Timer
 } from "lucide-react";
+import { PixelIcon } from "../../assets/pixelArt";
+import type { PixelIconName } from "../../assets/pixelArtAssets";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { getDueChecklistItems, type V05ChecklistItemKey } from "./checklist";
@@ -93,25 +80,25 @@ const completionMarkers: Record<CompletionState, string> = {
 	neutral: ""
 };
 
-const streakIcons: Record<StreakId, LucideIcon> = {
-	workout: Dumbbell,
-	goodSleep: Moon,
-	skincare: Sparkles,
-	vitamins: Pill,
-	logging: CalendarDays
+const streakIcons: Record<StreakId, PixelIconName> = {
+	workout: "workout",
+	goodSleep: "sleep",
+	skincare: "skincare",
+	vitamins: "vitamins",
+	logging: "logging"
 };
 
 function FieldLabel({
-	Icon,
+	icon,
 	children
 }: {
-	Icon: LucideIcon;
+	icon: PixelIconName;
 	children: ReactNode;
 }) {
 	return (
 		<span className="field-label">
 			<span className="field-icon" aria-hidden="true">
-				<Icon size={14} />
+				<PixelIcon name={icon} uiSize="tiny" />
 			</span>
 			<span>{children}</span>
 		</span>
@@ -313,157 +300,177 @@ function TodayCheckIn({
 						</section>
 					) : null}
 
-					<fieldset className="checklist-fieldset" disabled={!isConfigured || isLoading}>
-						<legend>Checklist</legend>
-						<div className="check-preview-list">
-							{dueItems.map((item) => (
-								<label className="check-preview real-check" key={item.key}>
-									<input
-										type="checkbox"
-										checked={Boolean(checklistState[item.key])}
-										onChange={(event) =>
-											void handleChecklistChange(item.key, event.target.checked)
-										}
-									/>
-									<span className="tiny-checkbox" aria-hidden="true">
-										<Check size={14} />
-									</span>
-									<span>{item.label}</span>
-								</label>
-							))}
+					<section className="checkin-section checklist-section" aria-labelledby="checklist-title">
+						<div className="checkin-section-heading">
+							<p className="eyebrow">Checking off</p>
+							<h4 id="checklist-title">Checklist</h4>
 						</div>
-					</fieldset>
+						<fieldset className="checklist-fieldset" disabled={!isConfigured || isLoading}>
+							<legend className="sr-only">Checklist</legend>
+							<div className="check-preview-list">
+								{dueItems.map((item) => {
+									const isWorkout = item.key === "workout";
 
-					<div className="daily-input-grid">
-						<label>
-							<FieldLabel Icon={Weight}>
-								Weight <em>lb</em>
-							</FieldLabel>
-							<input
-								type="number"
-								inputMode="decimal"
-								min="0"
-								step="0.1"
-								value={form.weight}
-								onChange={(event) => updateForm("weight", event.target.value)}
-							/>
-						</label>
-						<label>
-							<FieldLabel Icon={SportShoe}>Steps</FieldLabel>
-							<input
-								type="number"
-								inputMode="numeric"
-								min="0"
-								step="1"
-								value={form.steps}
-								onChange={(event) => updateForm("steps", event.target.value)}
-							/>
-						</label>
-						<label>
-							<FieldLabel Icon={Moon}>Sleep hours</FieldLabel>
-							<input
-								type="number"
-								inputMode="numeric"
-								min="0"
-								step="1"
-								value={form.sleepHours}
-								onChange={(event) => updateForm("sleepHours", event.target.value)}
-							/>
-						</label>
-						<label>
-							<FieldLabel Icon={Moon}>Sleep minutes</FieldLabel>
-							<input
-								type="number"
-								inputMode="numeric"
-								min="0"
-								max="59"
-								step="1"
-								value={form.sleepMinutes}
-								onChange={(event) => updateForm("sleepMinutes", event.target.value)}
-							/>
-						</label>
-						<label>
-							<FieldLabel Icon={Bed}>Bedtime</FieldLabel>
-							<input
-								type="time"
-								value={form.bedtime}
-								onChange={(event) => updateForm("bedtime", event.target.value)}
-							/>
-						</label>
-						<label>
-							<FieldLabel Icon={Sun}>Wake-up time</FieldLabel>
-							<input
-								type="time"
-								value={form.wakeTime}
-								onChange={(event) => updateForm("wakeTime", event.target.value)}
-							/>
-						</label>
-						<label>
-							<FieldLabel Icon={Utensils}>Yesterday's calories</FieldLabel>
-							<input
-								type="number"
-								inputMode="numeric"
-								min="0"
-								step="1"
-								value={form.previousDayCalories}
-								onChange={(event) =>
-									updateForm("previousDayCalories", event.target.value)
-								}
-							/>
-						</label>
-						<label className="wide-field">
-							<FieldLabel Icon={PencilLine}>Tiny note</FieldLabel>
-							<input
-								type="text"
-								value={form.notes}
-								onChange={(event) => updateForm("notes", event.target.value)}
-							/>
-						</label>
-					</div>
+									return (
+										<div
+											className={isWorkout ? "check-preview-stack" : undefined}
+											key={item.key}
+										>
+											<label className="check-preview real-check">
+												<input
+													type="checkbox"
+													checked={Boolean(checklistState[item.key])}
+													aria-expanded={isWorkout ? workedOut : undefined}
+													onChange={(event) =>
+														void handleChecklistChange(item.key, event.target.checked)
+													}
+												/>
+												<span className="tiny-checkbox" aria-hidden="true">
+													<Check size={14} />
+												</span>
+												<span>{item.label}</span>
+											</label>
+											{isWorkout && workedOut ? (
+												<section
+													className="workout-details"
+													aria-labelledby="workout-details-title"
+												>
+													<h5 id="workout-details-title">Activity details</h5>
+													<div className="daily-input-grid workout-input-grid">
+														<label>
+															<FieldLabel icon="workout">Activity type</FieldLabel>
+															<input
+																type="text"
+																value={form.workoutActivityType}
+																onChange={(event) =>
+																	updateForm("workoutActivityType", event.target.value)
+																}
+															/>
+														</label>
+														<label>
+															<span className="field-label">
+																<span className="field-icon" aria-hidden="true">
+																	<Timer size={14} />
+																</span>
+																<span>
+																	Duration <em>minutes</em>
+																</span>
+															</span>
+															<input
+																type="number"
+																inputMode="numeric"
+																min="0"
+																step="1"
+																value={form.workoutDurationMinutes}
+																onChange={(event) =>
+																	updateForm("workoutDurationMinutes", event.target.value)
+																}
+															/>
+														</label>
+													</div>
+												</section>
+											) : null}
+										</div>
+									);
+								})}
+							</div>
+						</fieldset>
+					</section>
 
-					<section
-						className={`workout-details ${workedOut ? "" : "inactive"}`}
-						aria-labelledby="workout-details-title"
-					>
-						<div>
-							<p className="eyebrow">Workout</p>
-							<h4 id="workout-details-title">Activity details</h4>
+					<section className="checkin-section daily-details-section" aria-labelledby="daily-details-title">
+						<div className="checkin-section-heading">
+							<p className="eyebrow">Entering today</p>
+							<h4 id="daily-details-title">Daily details</h4>
 						</div>
-						<div className="daily-input-grid two-column">
+						<div className="daily-input-grid">
 							<label>
-								<FieldLabel Icon={Dumbbell}>Activity type</FieldLabel>
+								<FieldLabel icon="weight">
+									Weight <em>lb</em>
+								</FieldLabel>
 								<input
-									type="text"
-									value={form.workoutActivityType}
-									disabled={!workedOut}
-									onChange={(event) =>
-										updateForm("workoutActivityType", event.target.value)
-									}
+									type="number"
+									inputMode="decimal"
+									min="0"
+									step="0.1"
+									value={form.weight}
+									onChange={(event) => updateForm("weight", event.target.value)}
 								/>
 							</label>
 							<label>
-								<FieldLabel Icon={Timer}>
-									Duration <em>minutes</em>
-								</FieldLabel>
+								<FieldLabel icon="steps">Steps</FieldLabel>
 								<input
 									type="number"
 									inputMode="numeric"
 									min="0"
 									step="1"
-									value={form.workoutDurationMinutes}
-									disabled={!workedOut}
+									value={form.steps}
+									onChange={(event) => updateForm("steps", event.target.value)}
+								/>
+							</label>
+							<label>
+								<FieldLabel icon="sleep">Sleep hours</FieldLabel>
+								<input
+									type="number"
+									inputMode="numeric"
+									min="0"
+									step="1"
+									value={form.sleepHours}
+									onChange={(event) => updateForm("sleepHours", event.target.value)}
+								/>
+							</label>
+							<label>
+								<FieldLabel icon="sleep">Sleep minutes</FieldLabel>
+								<input
+									type="number"
+									inputMode="numeric"
+									min="0"
+									max="59"
+									step="1"
+									value={form.sleepMinutes}
+									onChange={(event) => updateForm("sleepMinutes", event.target.value)}
+								/>
+							</label>
+							<label>
+								<FieldLabel icon="bedtime">Bedtime</FieldLabel>
+								<input
+									type="time"
+									value={form.bedtime}
+									onChange={(event) => updateForm("bedtime", event.target.value)}
+								/>
+							</label>
+							<label>
+								<FieldLabel icon="wakeUp">Wake-up time</FieldLabel>
+								<input
+									type="time"
+									value={form.wakeTime}
+									onChange={(event) => updateForm("wakeTime", event.target.value)}
+								/>
+							</label>
+							<label>
+								<FieldLabel icon="calories">Yesterday's calories</FieldLabel>
+								<input
+									type="number"
+									inputMode="numeric"
+									min="0"
+									step="1"
+									value={form.previousDayCalories}
 									onChange={(event) =>
-										updateForm("workoutDurationMinutes", event.target.value)
+										updateForm("previousDayCalories", event.target.value)
 									}
 								/>
 							</label>
+							<label className="wide-field">
+								<FieldLabel icon="note">Tiny note</FieldLabel>
+								<input
+									type="text"
+									value={form.notes}
+									onChange={(event) => updateForm("notes", event.target.value)}
+								/>
+							</label>
 						</div>
-						{!workedOut ? (
-							<p className="mini-note">Check Worked Out to add activity details.</p>
-						) : null}
 					</section>
 
-					<section className="food-photo-preview" aria-labelledby="food-photo-title">
+					<section className="checkin-section food-photo-preview" aria-labelledby="food-photo-title">
 						<FoodPhotoSection
 							dateKey={dateKey}
 							isConfigured={isConfigured}
@@ -562,12 +569,14 @@ function FoodPhotoSection({
 					<p className="eyebrow">Food scrapbook</p>
 					<h4 id="food-photo-title">Food photos</h4>
 				</div>
-				<Camera aria-hidden="true" size={18} />
+				<span className="section-pixel-icon" aria-hidden="true">
+					<PixelIcon name="camera" uiSize="medium" />
+				</span>
 			</div>
 
 			<div className="food-upload-grid">
 				<div className="food-field-card photo-picker-card">
-					<FieldLabel Icon={Camera}>Photo</FieldLabel>
+					<FieldLabel icon="camera">Photo</FieldLabel>
 					<input
 						id={fileInputId}
 						className="native-file-input"
@@ -580,7 +589,6 @@ function FoodPhotoSection({
 						}}
 					/>
 					<label className="photo-picker-button" htmlFor={fileInputId}>
-						<Camera aria-hidden="true" size={16} />
 						Choose or take photo
 					</label>
 					<p className={`selected-file-name ${file ? "has-file" : ""}`}>
@@ -588,7 +596,7 @@ function FoodPhotoSection({
 					</p>
 				</div>
 				<label className="food-field-card">
-					<FieldLabel Icon={Utensils}>Meal type</FieldLabel>
+					<FieldLabel icon="meal">Meal type</FieldLabel>
 					<select
 						value={mealType}
 						disabled={!isConfigured || isUploading}
@@ -603,7 +611,7 @@ function FoodPhotoSection({
 					</select>
 				</label>
 				<label className="food-field-card">
-					<FieldLabel Icon={PencilLine}>Food note</FieldLabel>
+					<FieldLabel icon="note">Food note</FieldLabel>
 					<input
 						type="text"
 						value={note}
@@ -752,15 +760,18 @@ function TodayMotivation({
 								aria-label="Previous month"
 								onClick={() => onChangeMonth(-1)}
 							>
-								<ChevronLeft aria-hidden="true" size={18} />
+								<PixelIcon name="arrowLeft" aria-hidden="true" />
 							</button>
-							<h3 id="calendar-title">{formatMonthYear(displayMonthKey)}</h3>
+							<span className="calendar-title-lockup">
+								<PixelIcon name="calendar" aria-hidden="true" />
+								<h3 id="calendar-title">{formatMonthYear(displayMonthKey)}</h3>
+							</span>
 							<button
 								type="button"
 								aria-label="Next month"
 								onClick={() => onChangeMonth(1)}
 							>
-								<ChevronRight aria-hidden="true" size={18} />
+								<PixelIcon name="arrowRight" aria-hidden="true" />
 							</button>
 						</div>
 						<div className="weekday-row" aria-hidden="true">
@@ -832,13 +843,13 @@ function TodayMotivation({
 						<h3 id="streaks-title">Current streaks</h3>
 						<div className="streak-list">
 							{streaks.map((streak) => {
-								const Icon = streakIcons[streak.id];
+								const icon = streakIcons[streak.id];
 
 								return (
 									<div className="streak-card" key={streak.id}>
-										<span className="streak-icon" aria-hidden="true">
-											<Icon size={18} />
-										</span>
+								<span className="streak-icon" aria-hidden="true">
+										<PixelIcon name={icon} uiSize="tiny" />
+									</span>
 										<span>{streak.label}</span>
 										<small>{formatStreakValue(streak.count)}</small>
 									</div>
